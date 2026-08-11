@@ -1,0 +1,35 @@
+PLAN DE IMPLEMENTACIÓN - JustReadPDF
+
+ARQUITECTURA: Vertical Slice (básico)
+
+OBJETIVO:
+Convertir PDF en texto para traducción manual en ventana de preview colapsable.
+Procesar por bloques (páginas) no todo a la vez.
+
+ENFOQUE VERTICAL SLICE:
+Construir funcionalidad completa de extremo a extremo en page.tsx,
+luego extraer componentes si es necesario.
+
+FLUJO PRINCIPAL (page.tsx):
+1. Estado para archivo PDF cargado
+2. Estado para texto extraído por páginas
+3. Estado para ventana colapsable
+4. Función para cargar PDF
+5. Función para extraer texto página por página (react-pdf)
+6. Renderizado de ventana de preview con texto organizado
+
+COMPONENTES (extraídos si necesario):
+- PDFLoader (input file)
+- PreviewWindow (ventana colapsable)
+- PageBlock (bloque de texto por página)
+
+CARACTERÍSTICAS:
+- Sin botón de traducción automático
+- Texto listo para copiar y traducir manualmente
+- Cada página como bloque separado
+- Ventana colapsable para facilitar trabajo
+
+DEPENDENCIAS EXISTENTES:
+- react-pdf (v10.4.1) ✓
+- Next.js 16.1.6 ✓
+- TailwindCSS ✓
