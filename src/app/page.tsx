@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import DocViewer, { DocViewerRenderers } from '@iamjariwala/react-doc-viewer';
-import '@iamjariwala/react-doc-viewer/dist/index.css';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
+import DocumentViewer from '@/components/DocumentViewer';
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -50,22 +49,7 @@ export default function Home() {
             <p className="text-lg">Extrayendo texto del PDF...</p>
           </div>
         ) : textFile ? (
-          <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden flex flex-col">
-            <DocViewer
-              documents={[{ uri: URL.createObjectURL(textFile) }]}
-              pluginRenderers={DocViewerRenderers}
-              config={{
-                header: {
-                  disableHeader: false,
-                  disableFileName: false,
-                  retainURLParams: false,
-                },
-                themeMode: "dark",
-              }}
-              style={{ height: 'calc(100vh - 100px)' }}
-              className="flex-1"
-            />
-          </div>
+          <DocumentViewer textFile={textFile} />
         ) : (
           <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex items-center justify-center">
             <div className="max-w-2xl">

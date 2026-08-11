@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+/* DocViewer dark mode override */
+#doc-viewer {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer * {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer .react-doc-viewer {
+  background-color: #1f2937 !important;
+}
+
+#doc-viewer .react-doc-viewer-header {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+#doc-viewer .react-doc-viewer-body {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer .react-doc-viewer-main {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer .react-doc-viewer-content {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer pre,
+#doc-viewer code {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer .header-btn {
+  background-color: #374151 !important;
+  color: #e5e7eb !important;
+}
+
+#doc-viewer .header-btn:hover {
+  background-color: #4b5563 !important;
+}
