@@ -41,7 +41,22 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
+    <div className="min-h-screen bg-gray-900 flex flex-col relative">
+      {/* Botón flotante de carga - Solo cuando hay DocumentViewer activo */}
+      {textFile && (
+        <div className="absolute top-4 right-4 z-50">
+          <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm shadow-lg">
+            <span>Cargar PDF</span>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={handlePdfUpload}
+              className="hidden"
+            />
+          </label>
+        </div>
+      )}
+
       {/* DocumentView - Prioridad máxima */}
       <div className="flex-1 flex flex-col">
         {isExtracting ? (
@@ -68,20 +83,22 @@ export default function Home() {
         )}
       </div>
 
-      {/* Botones de carga - Debajo del panel */}
-      <div className="p-4 bg-gray-900 border-t border-gray-700">
-        <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
-          <label className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-center">
-            <span className="block text-sm md:text-base">Cargar PDF</span>
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handlePdfUpload}
-              className="hidden"
-            />
-          </label>
+      {/* Botones de carga - Debajo del panel - Solo cuando NO hay DocumentViewer activo */}
+      {!textFile && (
+        <div className="p-4 bg-gray-900 border-t border-gray-700">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
+            <label className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-center">
+              <span className="block text-sm md:text-base">Cargar PDF</span>
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handlePdfUpload}
+                className="hidden"
+              />
+            </label>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
