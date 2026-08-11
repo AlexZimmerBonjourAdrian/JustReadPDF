@@ -14,6 +14,7 @@ export default function Home() {
   const [textFile, setTextFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [ocrProgress, setOcrProgress] = useState<number>(0);
 
   useEffect(() => {
     loadStoredDocument();
@@ -74,7 +75,7 @@ export default function Home() {
     try {
       if (isPdf) {
         // Procesar PDF
-        const text = await PdfTextExtractor.extractText(file);
+        const text = await PdfTextExtractor.extractText(file, setOcrProgress);
         setExtractedText(text);
         
         // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
@@ -107,6 +108,7 @@ export default function Home() {
       alert('Error al procesar el archivo');
     } finally {
       setIsExtracting(false);
+      setOcrProgress(0);
     }
   };
 
@@ -158,8 +160,20 @@ export default function Home() {
             <p className="text-lg">Cargando documento almacenado...</p>
           </div>
         ) : isExtracting ? (
-          <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex items-center justify-center">
-            <p className="text-lg">Extrayendo texto del PDF...</p>
+          <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex flex-col items-center justify-center">
+            <p className="text-lg mb-4">
+              {ocrProgress > 0 
+                ? `Procesando PDF con OCR... ${ocrProgress.toFixed(1)}%`
+                : 'Extrayendo texto del PDF...'}
+            </p>
+            {ocrProgress > 0 && (
+              <div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-blue-600 transition-all duration-300"
+                  style={{ width: `${ocrProgress}%` }}
+                />
+              </div>
+            )}
           </div>
         ) : (
           <AnimatePresence mode="wait">

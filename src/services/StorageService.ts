@@ -33,10 +33,17 @@ export class StorageService {
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
       const store = transaction.objectStore(this.STORE_NAME);
 
-      // Limpiar documentos anteriores
-      await this.clearDocuments();
+      // Limpiar documentos anteriores en la misma transacción
+      const clearRequest = store.clear();
+      
+      await new Promise<void>((resolve, reject) => {
+        clearRequest.onsuccess = () => resolve();
+        clearRequest.onerror = () => reject(clearRequest.error);
+      });
 
+      // Convertir archivo a ArrayBuffer dentro de la transacción
       const arrayBuffer = await file.arrayBuffer();
+      
       const document: StoredDocument = {
         fileName: file.name,
         fileType: file.type,
@@ -47,9 +54,17 @@ export class StorageService {
 
       store.add(document);
 
-      transaction.oncomplete = () => {
-        db.close();
-      };
+      // Esperar a que la transacción complete
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      });
     } catch (error) {
       console.error('Error saving document to IndexedDB:', error);
     }
