@@ -43,14 +43,9 @@ export default function Home() {
         const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
         setTextFile(textFileObj);
       } else if (isTxt) {
-        // Procesar TXT - leer contenido y crear archivo para el viewer
-        const text = await TxtViewerService.readTxtFile(file);
-        setExtractedText(text);
-        
-        // Crear archivo para mostrar con DocumentViewer
-        const textBlob = new Blob([text], { type: 'text/plain' });
-        const textFileObj = new File([textBlob], file.name, { type: 'text/plain' });
-        setTextFile(textFileObj);
+        // Procesar TXT - el servicio ya devuelve un archivo formateado
+        const textFile = await TxtViewerService.readTxtFile(file);
+        setTextFile(textFile);
       } else if (isRtf) {
         // Procesar RTF - el DocViewer puede mostrar RTF directamente
         const rtfFile = await RtfViewerService.readRtfFile(file);
