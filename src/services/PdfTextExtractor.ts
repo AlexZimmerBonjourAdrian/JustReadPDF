@@ -1,6 +1,8 @@
 import { convert } from '@pdf2md/core';
 
 export class PdfTextExtractor {
+  private static MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
   /**
    * Extrae texto de un archivo PDF manteniendo formato (markdown)
    * @param file Archivo PDF a procesar
@@ -8,11 +10,21 @@ export class PdfTextExtractor {
    */
   static async extractText(file: File): Promise<string> {
     try {
+      // Validar tamaño del archivo
+      if (file.size > this.MAX_FILE_SIZE) {
+        throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo permitido: 50MB`);
+      }
+
+      console.log(`Procesando PDF: ${file.name}, Tamaño: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      
       const arrayBuffer = await file.arrayBuffer();
+      console.log('ArrayBuffer creado, iniciando conversión...');
+      
       const result = await convert(arrayBuffer);
+      console.log('Conversión completada, status:', result.status);
       
       if (result.status === 'failed') {
-        throw new Error('La conversión del PDF falló');
+        throw new Error(`La conversión del PDF falló. El archivo puede tener un formato no compatible.`);
       }
       
       // Asegurarse de que result.markdown sea un string
@@ -20,13 +32,23 @@ export class PdfTextExtractor {
       
       if (typeof markdown !== 'string') {
         console.error('result.markdown no es un string:', markdown);
-        return '';
+        throw new Error('El resultado de la conversión no es válido');
       }
       
+      if (markdown.length === 0) {
+        throw new Error('No se pudo extraer texto del PDF. El archivo puede estar vacío o ser una imagen escaneada.');
+      }
+      
+      console.log(`Texto extraído exitosamente: ${markdown.length} caracteres`);
       return markdown;
     } catch (error) {
       console.error('Error en PdfTextExtractor.extractText:', error);
-      throw error;
+      
+      if (error instanceof Error) {
+        throw new Error(`Error al procesar PDF: ${error.message}`);
+      }
+      
+      throw new Error('Error desconocido al procesar el PDF');
     }
   }
 
