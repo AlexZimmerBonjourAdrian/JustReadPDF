@@ -1,16 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
+import DocViewer, { DocViewerRenderers } from '@iamjariwala/react-doc-viewer';
+import '@iamjariwala/react-doc-viewer/dist/index.css';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
-
-const DocumentViewer = dynamic(
-  () => import('@shahajimbhosle/local-doc-viewer').then(mod => ({ default: mod.DocumentViewer })),
-  { 
-    ssr: false,
-    loading: () => <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300">Cargando visor...</div>
-  }
-);
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -58,20 +51,20 @@ export default function Home() {
           </div>
         ) : textFile ? (
           <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden flex flex-col">
-            <div className="bg-gray-700 px-4 py-3 border-b border-gray-600 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-white">
-                {textFile.name}
-              </h2>
-              <p className="text-sm text-gray-300">
-                Texto extraído con formato - Sin imágenes
-              </p>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <DocumentViewer
-                source={textFile}
-                className="h-full"
-              />
-            </div>
+            <DocViewer
+              documents={[{ uri: URL.createObjectURL(textFile) }]}
+              pluginRenderers={DocViewerRenderers}
+              config={{
+                header: {
+                  disableHeader: false,
+                  disableFileName: false,
+                  retainURLParams: false,
+                },
+                themeMode: "dark",
+              }}
+              style={{ height: 'calc(100vh - 100px)' }}
+              className="flex-1"
+            />
           </div>
         ) : (
           <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex items-center justify-center">

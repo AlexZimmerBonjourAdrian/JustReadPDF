@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@heroicons/react": "^2.2.0",
+        "@iamjariwala/react-doc-viewer": "^1.8.0",
         "@pdf2md/core": "^0.3.0",
         "@shahajimbhosle/local-doc-viewer": "^1.0.8",
         "file-saver": "^2.0.5",
