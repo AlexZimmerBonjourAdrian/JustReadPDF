@@ -45,10 +45,16 @@ export default function Home() {
       } else if (isTxt) {
         // Procesar TXT - el servicio ya devuelve un archivo formateado
         const textFile = await TxtViewerService.readTxtFile(file);
+        // Leer el texto para búsqueda
+        const text = await textFile.text();
+        setExtractedText(text);
         setTextFile(textFile);
       } else if (isRtf) {
         // Procesar RTF - el DocViewer puede mostrar RTF directamente
         const rtfFile = await RtfViewerService.readRtfFile(file);
+        // Leer el texto para búsqueda
+        const text = await rtfFile.text();
+        setExtractedText(text);
         setTextFile(rtfFile);
       }
     } catch (error) {
@@ -101,7 +107,7 @@ export default function Home() {
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="flex-1"
               >
-                <DocumentViewer textFile={textFile} />
+                <DocumentViewer textFile={textFile} extractedText={extractedText} />
               </motion.div>
             ) : (
               <motion.div

@@ -2,14 +2,25 @@
 
 import DocViewer, { DocViewerRenderers } from '@iamjariwala/react-doc-viewer';
 import '@iamjariwala/react-doc-viewer/dist/index.css';
+import SearchBar from './SearchBar';
 
 interface DocumentViewerProps {
   textFile: File;
+  extractedText?: string;
 }
 
-export default function DocumentViewer({ textFile }: DocumentViewerProps) {
+export default function DocumentViewer({ textFile, extractedText }: DocumentViewerProps) {
+  const handleResultClick = (lineNumber: number) => {
+    console.log('Navigating to line:', lineNumber);
+    // Implementar scroll a la línea específica
+  };
+
   return (
     <div id="doc-viewer" className="flex-1 bg-gray-800 rounded-lg overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between p-3 bg-gray-900 border-b border-gray-700">
+        <span className="text-sm text-gray-300 truncate">{textFile.name}</span>
+        {extractedText && <SearchBar text={extractedText} onResultClick={handleResultClick} />}
+      </div>
       <style jsx global>{`
         #doc-viewer {
           background-color: #1f2937 !important;
@@ -63,7 +74,7 @@ export default function DocumentViewer({ textFile }: DocumentViewerProps) {
           },
           themeMode: "dark",
         }}
-        style={{ height: 'calc(100vh - 100px)' }}
+        style={{ height: 'calc(100vh - 140px)' }}
         className="flex-1"
       />
     </div>

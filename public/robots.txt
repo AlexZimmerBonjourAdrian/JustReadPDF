@@ -1,28 +1,18 @@
 User-agent: *
 Allow: /
 
-# Permitir indexación de páginas principales
-Allow: /wata/
-Allow: /about/
-Allow: /dev-journal/
-Allow: /faq/
-Allow: /support/
-
 # Bloquear recursos que no necesitan indexación
 Disallow: /api/
 Disallow: /_next/
 Disallow: /static/
-Disallow: /admin/
-Disallow: /private/
 
 # Permitir acceso a imágenes y recursos multimedia
 Allow: /images/
 Allow: /Icon/
 Allow: /Font/
-Allow: /Music/
 
 # Sitemap
-Sitemap: https://zimmzimmgames.com/sitemap.xml
+Sitemap: https://iridescent-sfogliatella-71f40c.netlify.app/sitemap.xml
 
 # Crawl-delay para ser respetuoso con el servidor
 Crawl-delay: 1
