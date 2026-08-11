@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
+import { TxtViewerService } from '@/services/TxtViewerService';
+import { RtfViewerService } from '@/services/RtfViewerService';
 import DocumentViewer from '@/components/DocumentViewer';
 
 export default function Home() {
@@ -11,12 +13,17 @@ export default function Home() {
   const [textFile, setTextFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
 
-  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      alert('Por favor sube un archivo PDF');
+    // Validar tipo de archivo
+    const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    const isTxt = TxtViewerService.isValidTxtFile(file);
+    const isRtf = RtfViewerService.isValidRtfFile(file);
+
+    if (!isPdf && !isTxt && !isRtf) {
+      alert('Por favor sube un archivo PDF, TXT o RTF');
       return;
     }
 
@@ -26,16 +33,32 @@ export default function Home() {
     setIsExtracting(true);
 
     try {
-      const text = await PdfTextExtractor.extractText(file);
-      setExtractedText(text);
-      
-      // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
-      const textBlob = new Blob([text], { type: 'text/markdown' });
-      const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
-      setTextFile(textFileObj);
+      if (isPdf) {
+        // Procesar PDF
+        const text = await PdfTextExtractor.extractText(file);
+        setExtractedText(text);
+        
+        // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
+        const textBlob = new Blob([text], { type: 'text/markdown' });
+        const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
+        setTextFile(textFileObj);
+      } else if (isTxt) {
+        // Procesar TXT - leer contenido y crear archivo para el viewer
+        const text = await TxtViewerService.readTxtFile(file);
+        setExtractedText(text);
+        
+        // Crear archivo para mostrar con DocumentViewer
+        const textBlob = new Blob([text], { type: 'text/plain' });
+        const textFileObj = new File([textBlob], file.name, { type: 'text/plain' });
+        setTextFile(textFileObj);
+      } else if (isRtf) {
+        // Procesar RTF - el DocViewer puede mostrar RTF directamente
+        const rtfFile = await RtfViewerService.readRtfFile(file);
+        setTextFile(rtfFile);
+      }
     } catch (error) {
-      console.error('Error extracting text:', error);
-      alert('Error al extraer el texto del PDF');
+      console.error('Error processing file:', error);
+      alert('Error al procesar el archivo');
     } finally {
       setIsExtracting(false);
     }
@@ -54,11 +77,11 @@ export default function Home() {
             className="absolute top-4 right-4 z-50"
           >
             <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm shadow-lg">
-              <span>Cargar PDF</span>
+              <span>Cargar archivo</span>
               <input
                 type="file"
-                accept=".pdf"
-                onChange={handlePdfUpload}
+                accept=".pdf,.txt,.rtf"
+                onChange={handleFileUpload}
                 className="hidden"
               />
             </label>
@@ -96,9 +119,9 @@ export default function Home() {
               >
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-bold mb-4">JustReadPDF</h2>
-                  <p className="text-lg mb-2">Sube un archivo PDF para extraer su texto</p>
+                  <p className="text-lg mb-2">Sube un archivo PDF, TXT o RTF para ver su contenido</p>
                   <p className="text-sm mb-4">
-                    El texto se extrae con formato (títulos, negritas, estructura), listo para copiar y traducir
+                    El texto se muestra con formato preservado, listo para copiar y traducir
                   </p>
                   <div className="text-xs text-gray-400">
                     <p>• Extracción con formato preservado</p>
@@ -124,11 +147,11 @@ export default function Home() {
           >
             <div className="max-w-7xl mx-auto flex items-center justify-center gap-4">
               <label className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-center">
-                <span className="block text-sm md:text-base">Cargar PDF</span>
+                <span className="block text-sm md:text-base">Cargar archivo</span>
                 <input
                   type="file"
-                  accept=".pdf"
-                  onChange={handlePdfUpload}
+                  accept=".pdf,.txt,.rtf"
+                  onChange={handleFileUpload}
                   className="hidden"
                 />
               </label>
