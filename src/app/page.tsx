@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
 import { TxtViewerService } from '@/services/TxtViewerService';
 import { RtfViewerService } from '@/services/RtfViewerService';
+import { StorageService } from '@/services/StorageService';
 import DocumentViewer from '@/components/DocumentViewer';
 
 export default function Home() {
@@ -12,6 +13,44 @@ export default function Home() {
   const [extractedText, setExtractedText] = useState<string>('');
   const [textFile, setTextFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadStoredDocument();
+  }, []);
+
+  const loadStoredDocument = async () => {
+    try {
+      const stored = await StorageService.loadDocument();
+      if (stored) {
+        setPdfFile(stored.file);
+        setExtractedText(stored.extractedText);
+        
+        // Recrear el archivo formateado según el tipo
+        const isPdf = stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf');
+        const isTxt = TxtViewerService.isValidTxtFile(stored.file);
+        const isRtf = RtfViewerService.isValidRtfFile(stored.file);
+
+        if (isPdf) {
+          const textBlob = new Blob([stored.extractedText], { type: 'text/markdown' });
+          const textFileObj = new File([textBlob], `${stored.file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
+          setTextFile(textFileObj);
+        } else if (isTxt) {
+          const textFile = await TxtViewerService.readTxtFile(stored.file);
+          setExtractedText(await textFile.text());
+          setTextFile(textFile);
+        } else if (isRtf) {
+          const rtfFile = await RtfViewerService.readRtfFile(stored.file);
+          setExtractedText(await rtfFile.text());
+          setTextFile(rtfFile);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stored document:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,6 +81,8 @@ export default function Home() {
         const textBlob = new Blob([text], { type: 'text/markdown' });
         const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
         setTextFile(textFileObj);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
       } else if (isTxt) {
         // Procesar TXT - el servicio ya devuelve un archivo formateado
         const textFile = await TxtViewerService.readTxtFile(file);
@@ -49,6 +90,8 @@ export default function Home() {
         const text = await textFile.text();
         setExtractedText(text);
         setTextFile(textFile);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
       } else if (isRtf) {
         // Procesar RTF - el DocViewer puede mostrar RTF directamente
         const rtfFile = await RtfViewerService.readRtfFile(file);
@@ -56,6 +99,8 @@ export default function Home() {
         const text = await rtfFile.text();
         setExtractedText(text);
         setTextFile(rtfFile);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
       }
     } catch (error) {
       console.error('Error processing file:', error);
@@ -63,6 +108,13 @@ export default function Home() {
     } finally {
       setIsExtracting(false);
     }
+  };
+
+  const handleClearStorage = async () => {
+    await StorageService.clearDocuments();
+    setPdfFile(null);
+    setExtractedText('');
+    setTextFile(null);
   };
 
   return (
@@ -77,22 +129,35 @@ export default function Home() {
             transition={{ duration: 0.3 }}
             className="absolute top-4 right-4 z-50"
           >
-            <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm shadow-lg">
-              <span>Cargar archivo</span>
-              <input
-                type="file"
-                accept=".pdf,.txt,.rtf"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-            </label>
+            <div className="flex gap-2">
+              <label className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer text-sm shadow-lg">
+                <span>Cargar archivo</span>
+                <input
+                  type="file"
+                  accept=".pdf,.txt,.rtf"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+              <button
+                onClick={handleClearStorage}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm shadow-lg"
+                title="Limpiar almacenamiento"
+              >
+                Limpiar
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* DocumentView - Prioridad máxima */}
       <div className="flex-1 flex flex-col">
-        {isExtracting ? (
+        {isLoading ? (
+          <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex items-center justify-center">
+            <p className="text-lg">Cargando documento almacenado...</p>
+          </div>
+        ) : isExtracting ? (
           <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex items-center justify-center">
             <p className="text-lg">Extrayendo texto del PDF...</p>
           </div>
