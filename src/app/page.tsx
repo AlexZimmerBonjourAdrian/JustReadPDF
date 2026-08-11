@@ -1,9 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { DocumentViewer } from '@shahajimbhosle/local-doc-viewer';
-import '@shahajimbhosle/local-doc-viewer/style.css';
+import dynamic from 'next/dynamic';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
+
+const DocumentViewer = dynamic(
+  () => import('@shahajimbhosle/local-doc-viewer').then(mod => ({ default: mod.DocumentViewer })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300">Cargando visor...</div>
+  }
+);
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -26,12 +33,12 @@ export default function Home() {
     setIsExtracting(true);
 
     try {
-      const text = await PdfTextExtractor.extractPlainText(file);
+      const text = await PdfTextExtractor.extractText(file);
       setExtractedText(text);
       
-      // Crear archivo de texto para mostrar con DocumentViewer
-      const textBlob = new Blob([text], { type: 'text/plain' });
-      const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.txt`, { type: 'text/plain' });
+      // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
+      const textBlob = new Blob([text], { type: 'text/markdown' });
+      const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
       setTextFile(textFileObj);
     } catch (error) {
       console.error('Error extracting text:', error);
@@ -56,7 +63,7 @@ export default function Home() {
                 {textFile.name}
               </h2>
               <p className="text-sm text-gray-300">
-                Texto extraído del PDF - Sin imágenes
+                Texto extraído con formato - Sin imágenes
               </p>
             </div>
             <div className="flex-1 overflow-hidden">
@@ -72,11 +79,11 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-4">JustReadPDF</h2>
               <p className="text-lg mb-2">Sube un archivo PDF para extraer su texto</p>
               <p className="text-sm mb-4">
-                El texto se extrae sin imágenes, listo para copiar y traducir
+                El texto se extrae con formato (títulos, negritas, estructura), listo para copiar y traducir
               </p>
               <div className="text-xs text-gray-400">
-                <p>• Extracción de texto plano</p>
-                <p>• Sin imágenes ni formato complejo</p>
+                <p>• Extracción con formato preservado</p>
+                <p>• Sin imágenes pero con estructura</p>
                 <p>• Procesamiento 100% local</p>
               </div>
             </div>
