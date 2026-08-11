@@ -6,28 +6,36 @@ OBJETIVO:
 Convertir PDF en texto para traducción manual en ventana de preview colapsable.
 Procesar por bloques (páginas) no todo a la vez.
 
+FASE 1: Configuración básica
+- Limpiar page.tsx actual
+- Configurar estructura inicial
+- Preparar estados principales
+
+FASE 2: Carga de PDF
+- Implementar input file
+- Manejo de estado del archivo cargado
+- Validación de archivo PDF
+
+FASE 3: Extracción de texto
+- Integrar react-pdf
+- Extraer texto página por página
+- Procesar en bloques individuales
+- Limpiar y ordenar texto
+
+FASE 4: Ventana de preview
+- Crear ventana colapsable
+- Mostrar texto organizado por páginas
+- Implementar botón minimizar/maximizar
+- Estilizar con TailwindCSS
+
+FASE 5: Refinamiento
+- Extraer componentes si es necesario
+- Mejorar UX
+- Testing básico
+
 ENFOQUE VERTICAL SLICE:
-Construir funcionalidad completa de extremo a extremo en page.tsx,
-luego extraer componentes si es necesario.
-
-FLUJO PRINCIPAL (page.tsx):
-1. Estado para archivo PDF cargado
-2. Estado para texto extraído por páginas
-3. Estado para ventana colapsable
-4. Función para cargar PDF
-5. Función para extraer texto página por página (react-pdf)
-6. Renderizado de ventana de preview con texto organizado
-
-COMPONENTES (extraídos si necesario):
-- PDFLoader (input file)
-- PreviewWindow (ventana colapsable)
-- PageBlock (bloque de texto por página)
-
-CARACTERÍSTICAS:
-- Sin botón de traducción automático
-- Texto listo para copiar y traducir manualmente
-- Cada página como bloque separado
-- Ventana colapsable para facilitar trabajo
+Cada fase builds sobre la anterior, manteniendo funcionalidad
+completa y funcional en cada iteración.
 
 DEPENDENCIAS EXISTENTES:
 - react-pdf (v10.4.1) ✓
