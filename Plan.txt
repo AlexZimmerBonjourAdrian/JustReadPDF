@@ -1,43 +1,52 @@
 PLAN DE IMPLEMENTACIÓN - JustReadPDF
 
-ARQUITECTURA: Vertical Slice (básico)
+ARQUITECTURA: Componentes profesionales + Procesamiento local
 
 OBJETIVO:
-Convertir PDF en texto para traducción manual en ventana de preview colapsable.
-Procesar por bloques (páginas) no todo a la vez.
+Convertir PDF en HTML con formato (negritas, cursivas, estructura) para traducción manual.
+Procesamiento 100% en el navegador sin backend.
 
-FASE 1: Configuración básica
-- Limpiar page.tsx actual
-- Configurar estructura inicial
-- Preparar estados principales
+FASE 1: Configuración básica ✓ COMPLETADO
+- Configurar Next.js 16.1.6 con TypeScript
+- Configurar TailwindCSS v4
+- Estructura inicial de componentes
 
-FASE 2: Carga de PDF
-- Implementar input file
-- Manejo de estado del archivo cargado
-- Validación de archivo PDF
+FASE 2: Visualizador profesional ✓ COMPLETADO
+- Instalar @shahajimbhosle/local-doc-viewer
+- Integrar DocumentViewer con modo oscuro
+- Configurar controles: zoom, búsqueda, impresión
+- Soporte multi-formato (PDF, HTML, DOCX, TXT)
 
-FASE 3: Extracción de texto
-- Integrar react-pdf
-- Extraer texto página por página
-- Procesar en bloques individuales
-- Limpiar y ordenar texto
+FASE 3: Extracción de texto con formato ✓ COMPLETADO
+- Instalar extract-pdf
+- Implementar conversión PDF → HTML estructurado
+- Mantener negritas, cursivas, headings H1-H6
+- Detección automática de listas y párrafos
+- Procesamiento local (sin servidor)
 
-FASE 4: Ventana de preview
-- Crear ventana colapsable
-- Mostrar texto organizado por páginas
-- Implementar botón minimizar/maximizar
-- Estilizar con TailwindCSS
+FASE 4: Interfaz de usuario ✓ COMPLETADO
+- Input file para carga de PDF
+- Estados de carga y error
+- Visualización del HTML resultante
+- UI con modo oscuro integrado
 
-FASE 5: Refinamiento
-- Extraer componentes si es necesario
-- Mejorar UX
-- Testing básico
+FASE 5: Próximas mejoras (PENDIENTE)
+- [ ] Exportar HTML para traducción externa
+- [ ] Integrar API de traducción (Google Translate, etc.)
+- [ ] Procesamiento por páginas/bloques
+- [ ] Caché de conversiones
+- [ ] Soporte para PDFs escaneados (OCR)
 
-ENFOQUE VERTICAL SLICE:
-Cada fase builds sobre la anterior, manteniendo funcionalidad
-completa y funcional en cada iteración.
+ENFOQUE ACTUAL:
+Uso de componentes profesionales probados en lugar de desarrollo desde cero.
+Procesamiento 100% client-side para privacidad y velocidad.
 
-DEPENDENCIAS EXISTENTES:
-- react-pdf (v10.4.1) ✓
+DEPENDENCIAS ACTUALES:
 - Next.js 16.1.6 ✓
-- TailwindCSS ✓
+- TailwindCSS v4 ✓
+- @shahajimbhosle/local-doc-viewer ✓ (visualizador profesional)
+- extract-pdf ✓ (extracción con formato)
+- react-pdf v10.4.1 ✓ (dependencia interna)
+- react-icons ✓
+- framer-motion ✓
+- geist ✓
