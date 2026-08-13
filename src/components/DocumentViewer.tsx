@@ -74,7 +74,7 @@ export default function DocumentViewer({ textFile, extractedText }: DocumentView
           },
           themeMode: "dark",
         }}
-        style={{ height: 'calc(100vh - 140px)' }}
+        style={{ height: '100%' }}
         className="flex-1"
       />
     </div>

@@ -3,20 +3,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
-import { TxtViewerService } from '@/services/TxtViewerService';
-import { RtfViewerService } from '@/services/RtfViewerService';
-import { DocxViewerService } from '@/services/DocxViewerService';
-import { EpubViewerService } from '@/services/EpubViewerService';
-import { DocLegacyViewerService } from '@/services/DocLegacyViewerService';
 import { StorageService } from '@/services/StorageService';
-import DocumentViewer from '@/components/DocumentViewer';
-import HtmlViewer from '@/components/HtmlViewer';
+import { FileProcessorFactory } from '@/services/FileProcessorFactory';
+import { ProcessedFile } from '@/services/FileProcessorStrategy';
+import { ViewerFactory } from '@/components/ViewerFactory';
+import { ViewerProps } from '@/components/strategies/ViewerStrategy';
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
-  const [textFile, setTextFile] = useState<File | null>(null);
-  const [htmlFile, setHtmlFile] = useState<File | null>(null);
+  const [viewerFile, setViewerFile] = useState<File | null>(null);
+  const [viewerType, setViewerType] = useState<'document' | 'html' | null>(null);
+  const [originalFileName, setOriginalFileName] = useState<string>('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -32,38 +30,23 @@ export default function Home() {
         setPdfFile(stored.file);
         setExtractedText(stored.extractedText);
         
-        // Recrear el archivo formateado según el tipo
-        const isPdf = stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf');
-        const isTxt = TxtViewerService.isValidTxtFile(stored.file);
-        const isRtf = RtfViewerService.isValidRtfFile(stored.file);
-        const isDocx = DocxViewerService.isValidDocxFile(stored.file);
-        const isEpub = EpubViewerService.isValidEpubFile(stored.file);
-        const isDoc = DocLegacyViewerService.isValidDocFile(stored.file);
-
-        if (isPdf) {
-          const textBlob = new Blob([stored.extractedText], { type: 'text/markdown' });
-          const textFileObj = new File([textBlob], `${stored.file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
-          setTextFile(textFileObj);
-        } else if (isTxt) {
-          const textFile = await TxtViewerService.readTxtFile(stored.file);
-          setExtractedText(await textFile.text());
-          setTextFile(textFile);
-        } else if (isRtf) {
-          const rtfFile = await RtfViewerService.readRtfFile(stored.file);
-          setExtractedText(await rtfFile.text());
-          setTextFile(rtfFile);
-        } else if (isDocx) {
-          const docxFile = await DocxViewerService.readDocxFile(stored.file);
-          setExtractedText(await docxFile.text());
-          setHtmlFile(docxFile);
-        } else if (isEpub) {
-          const epubFile = await EpubViewerService.readEpubFile(stored.file);
-          setExtractedText(await epubFile.text());
-          setTextFile(epubFile);
-        } else if (isDoc) {
-          const docFile = await DocLegacyViewerService.readDocFile(stored.file);
-          setExtractedText(await docFile.text());
-          setHtmlFile(docFile);
+        // Use strategy pattern for stored document
+        const strategy = FileProcessorFactory.getStrategy(stored.file);
+        if (strategy) {
+          // Special handling for PDF which needs extracted text from storage
+          if (stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf')) {
+            const textBlob = new Blob([stored.extractedText], { type: 'text/markdown' });
+            const textFileObj = new File([textBlob], `${stored.file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
+            setViewerFile(textFileObj);
+            setViewerType('document');
+            setExtractedText(stored.extractedText);
+          } else {
+            const processed = await strategy.processStored(stored.file);
+            setExtractedText(processed.text);
+            setViewerFile(processed.file);
+            setViewerType(processed.viewer);
+            setOriginalFileName(processed.originalFileName || '');
+          }
         }
       }
     } catch (error) {
@@ -77,80 +60,46 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
-    const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
-    const isTxt = TxtViewerService.isValidTxtFile(file);
-    const isRtf = RtfViewerService.isValidRtfFile(file);
-    const isDocx = DocxViewerService.isValidDocxFile(file);
-    const isEpub = EpubViewerService.isValidEpubFile(file);
-    const isDoc = DocLegacyViewerService.isValidDocFile(file);
-
-    if (!isPdf && !isTxt && !isRtf && !isDocx && !isEpub && !isDoc) {
+    // Validate file type using factory
+    if (!FileProcessorFactory.isValidFile(file)) {
       alert('Por favor sube un archivo PDF, TXT, RTF, DOC, DOCX o EPUB');
       return;
     }
 
     setPdfFile(file);
     setExtractedText('');
-    setTextFile(null);
-    setHtmlFile(null);
+    setViewerFile(null);
+    setViewerType(null);
+    setOriginalFileName('');
     setIsExtracting(true);
 
     try {
-      if (isPdf) {
-        // Procesar PDF
+      const strategy = FileProcessorFactory.getStrategy(file);
+      if (!strategy) {
+        throw new Error('No strategy found for file type');
+      }
+
+      let processed: ProcessedFile;
+      
+      // Special handling for PDF with OCR progress
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
         const text = await PdfTextExtractor.extractText(file, setOcrProgress);
         setExtractedText(text);
-        
-        // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
         const textBlob = new Blob([text], { type: 'text/markdown' });
         const textFileObj = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
-        setTextFile(textFileObj);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
-      } else if (isTxt) {
-        // Procesar TXT - el servicio ya devuelve un archivo formateado
-        const textFile = await TxtViewerService.readTxtFile(file);
-        // Leer el texto para búsqueda
-        const text = await textFile.text();
-        setExtractedText(text);
-        setTextFile(textFile);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
-      } else if (isRtf) {
-        // Procesar RTF - el DocViewer puede mostrar RTF directamente
-        const rtfFile = await RtfViewerService.readRtfFile(file);
-        // Leer el texto para búsqueda
-        const text = await rtfFile.text();
-        setExtractedText(text);
-        setTextFile(rtfFile);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
-      } else if (isDocx) {
-        // Procesar DOCX
-        const docxFile = await DocxViewerService.readDocxFile(file);
-        const text = await docxFile.text();
-        setExtractedText(text);
-        setHtmlFile(docxFile);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
-      } else if (isEpub) {
-        // Procesar EPUB
-        const epubFile = await EpubViewerService.readEpubFile(file);
-        const text = await epubFile.text();
-        setExtractedText(text);
-        setTextFile(epubFile);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
-      } else if (isDoc) {
-        // Procesar DOC (legacy)
-        const docFile = await DocLegacyViewerService.readDocFile(file);
-        const text = await docFile.text();
-        setExtractedText(text);
-        setHtmlFile(docFile);
-        // Guardar en IndexedDB
-        await StorageService.saveDocument(file, text);
+        processed = { file: textFileObj, text, viewer: 'document' };
+      } else {
+        processed = await strategy.process(file);
+        setExtractedText(processed.text);
       }
+
+      // Set appropriate viewer
+      setViewerFile(processed.file);
+      setViewerType(processed.viewer);
+      setOriginalFileName(processed.originalFileName || '');
+
+      // Save to IndexedDB
+      await StorageService.saveDocument(file, processed.text);
     } catch (error) {
       console.error('Error processing file:', error);
       alert('Error al procesar el archivo');
@@ -164,15 +113,16 @@ export default function Home() {
     await StorageService.clearDocuments();
     setPdfFile(null);
     setExtractedText('');
-    setTextFile(null);
-    setHtmlFile(null);
+    setViewerFile(null);
+    setViewerType(null);
+    setOriginalFileName('');
   };
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col relative">
       {/* Botón flotante de carga - Solo cuando hay DocumentViewer o HtmlViewer activo */}
       <AnimatePresence>
-        {(textFile || htmlFile) && (
+        {(viewerFile) && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -226,29 +176,29 @@ export default function Home() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            {textFile ? (
-              <motion.div
-                key="document-viewer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="flex-1"
-              >
-                <DocumentViewer textFile={textFile} extractedText={extractedText} />
-              </motion.div>
-            ) : htmlFile ? (
-              <motion.div
-                key="html-viewer"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="flex-1"
-              >
-                <HtmlViewer htmlFile={htmlFile} />
-              </motion.div>
-            ) : (
+            {viewerFile && viewerType ? (() => {
+              const strategy = ViewerFactory.getStrategy(viewerType);
+              if (!strategy) return null;
+              
+              const viewerProps: ViewerProps = {
+                file: viewerFile,
+                extractedText,
+                originalFileName
+              };
+              
+              return (
+                <motion.div
+                  key={`${viewerType}-viewer`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="flex-1"
+                >
+                  {strategy.render(viewerProps)}
+                </motion.div>
+              );
+            })() : (
               <motion.div
                 key="welcome-screen"
                 initial={{ opacity: 0, y: 20 }}
@@ -277,7 +227,7 @@ export default function Home() {
 
       {/* Botones de carga - Debajo del panel - Solo cuando NO hay DocumentViewer ni HtmlViewer activo */}
       <AnimatePresence>
-        {!textFile && !htmlFile && (
+        {!viewerFile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

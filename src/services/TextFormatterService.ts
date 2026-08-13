@@ -103,29 +103,53 @@ export class TextFormatterService {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${fileName} - JustReadPDF</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
+      line-height: 1.8;
       color: #e5e7eb;
+      margin: 0;
+      padding: 20px 30px;
+      background: #1f2937;
+      min-height: 100vh;
+    }
+    .content {
       max-width: 900px;
       margin: 0 auto;
-      padding: 40px 20px;
-      background: #1f2937;
     }
     h1, h2, h3, h4, h5, h6 {
       color: #f9fafb;
       margin-top: 1.5em;
       margin-bottom: 0.5em;
+      font-weight: 600;
     }
-    h1 { font-size: 2em; border-bottom: 2px solid #4b5563; padding-bottom: 0.3em; }
-    h2 { font-size: 1.5em; border-bottom: 1px solid #4b5563; padding-bottom: 0.2em; }
-    p { margin-bottom: 1em; }
+    h1 { 
+      font-size: 2em; 
+      border-bottom: 2px solid #4b5563; 
+      padding-bottom: 0.3em; 
+      margin-top: 0;
+    }
+    h2 { 
+      font-size: 1.5em; 
+      border-bottom: 1px solid #4b5563; 
+      padding-bottom: 0.2em; 
+    }
+    h3 { font-size: 1.25em; }
+    h4 { font-size: 1em; }
+    p { 
+      margin-bottom: 1.2em; 
+      line-height: 1.8;
+      max-width: 85ch;
+    }
     code {
       background: #374151;
       padding: 2px 6px;
       border-radius: 3px;
       font-family: 'Courier New', monospace;
       color: #e5e7eb;
+      font-size: 0.9em;
     }
     pre {
       background: #374151;
@@ -133,6 +157,7 @@ export class TextFormatterService {
       border-radius: 5px;
       overflow-x: auto;
       border: 1px solid #4b5563;
+      margin: 1em 0;
     }
     pre code {
       background: none;
@@ -143,6 +168,7 @@ export class TextFormatterService {
       padding-left: 16px;
       margin: 1em 0;
       color: #9ca3af;
+      font-style: italic;
     }
     table {
       border-collapse: collapse;
@@ -151,7 +177,7 @@ export class TextFormatterService {
     }
     th, td {
       border: 1px solid #4b5563;
-      padding: 8px 12px;
+      padding: 12px;
       text-align: left;
     }
     th {
@@ -162,12 +188,33 @@ export class TextFormatterService {
     td {
       background: #1f2937;
     }
-    ul, ol { margin: 1em 0; padding-left: 2em; }
-    li { margin: 0.5em 0; }
-    a { color: #60a5fa; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    strong, b { color: #f9fafb; }
-    em, i { color: #e5e7eb; }
+    ul, ol { 
+      margin: 1em 0; 
+      padding-left: 2em; 
+    }
+    li { 
+      margin: 0.5em 0; 
+      line-height: 1.6;
+    }
+    a { 
+      color: #60a5fa; 
+      text-decoration: none; 
+    }
+    a:hover { 
+      text-decoration: underline; 
+    }
+    strong, b { 
+      color: #f9fafb; 
+      font-weight: 600;
+    }
+    em, i { 
+      color: #e5e7eb; 
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #4b5563;
+      margin: 2em 0;
+    }
   </style>
 </head>
 <body>
