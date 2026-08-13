@@ -106,41 +106,43 @@ export class TextFormatterService {
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #333;
+      color: #e5e7eb;
       max-width: 900px;
       margin: 0 auto;
       padding: 40px 20px;
-      background: #fff;
+      background: #1f2937;
     }
     h1, h2, h3, h4, h5, h6 {
-      color: #1a1a1a;
+      color: #f9fafb;
       margin-top: 1.5em;
       margin-bottom: 0.5em;
     }
-    h1 { font-size: 2em; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.3em; }
-    h2 { font-size: 1.5em; border-bottom: 1px solid #e0e0e0; padding-bottom: 0.2em; }
+    h1 { font-size: 2em; border-bottom: 2px solid #4b5563; padding-bottom: 0.3em; }
+    h2 { font-size: 1.5em; border-bottom: 1px solid #4b5563; padding-bottom: 0.2em; }
     p { margin-bottom: 1em; }
     code {
-      background: #f4f4f4;
+      background: #374151;
       padding: 2px 6px;
       border-radius: 3px;
       font-family: 'Courier New', monospace;
+      color: #e5e7eb;
     }
     pre {
-      background: #f4f4f4;
+      background: #374151;
       padding: 16px;
       border-radius: 5px;
       overflow-x: auto;
+      border: 1px solid #4b5563;
     }
     pre code {
       background: none;
       padding: 0;
     }
     blockquote {
-      border-left: 4px solid #ddd;
+      border-left: 4px solid #6b7280;
       padding-left: 16px;
       margin: 1em 0;
-      color: #666;
+      color: #9ca3af;
     }
     table {
       border-collapse: collapse;
@@ -148,18 +150,24 @@ export class TextFormatterService {
       margin: 1em 0;
     }
     th, td {
-      border: 1px solid #ddd;
+      border: 1px solid #4b5563;
       padding: 8px 12px;
       text-align: left;
     }
     th {
-      background: #f5f5f5;
+      background: #374151;
       font-weight: 600;
+      color: #f9fafb;
+    }
+    td {
+      background: #1f2937;
     }
     ul, ol { margin: 1em 0; padding-left: 2em; }
     li { margin: 0.5em 0; }
-    a { color: #0066cc; text-decoration: none; }
+    a { color: #60a5fa; text-decoration: none; }
     a:hover { text-decoration: underline; }
+    strong, b { color: #f9fafb; }
+    em, i { color: #e5e7eb; }
   </style>
 </head>
 <body>

@@ -29,6 +29,10 @@ export class StorageService {
 
   static async saveDocument(file: File, extractedText: string): Promise<void> {
     try {
+      // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
+      // para evitar que la transacción se cierre mientras esperamos
+      const arrayBuffer = await file.arrayBuffer();
+      
       const db = await this.openDB();
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
       const store = transaction.objectStore(this.STORE_NAME);
@@ -41,9 +45,6 @@ export class StorageService {
         clearRequest.onerror = () => reject(clearRequest.error);
       });
 
-      // Convertir archivo a ArrayBuffer dentro de la transacción
-      const arrayBuffer = await file.arrayBuffer();
-      
       const document: StoredDocument = {
         fileName: file.name,
         fileType: file.type,

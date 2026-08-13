@@ -10,11 +10,13 @@ import { EpubViewerService } from '@/services/EpubViewerService';
 import { DocLegacyViewerService } from '@/services/DocLegacyViewerService';
 import { StorageService } from '@/services/StorageService';
 import DocumentViewer from '@/components/DocumentViewer';
+import HtmlViewer from '@/components/HtmlViewer';
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [textFile, setTextFile] = useState<File | null>(null);
+  const [htmlFile, setHtmlFile] = useState<File | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -53,7 +55,7 @@ export default function Home() {
         } else if (isDocx) {
           const docxFile = await DocxViewerService.readDocxFile(stored.file);
           setExtractedText(await docxFile.text());
-          setTextFile(docxFile);
+          setHtmlFile(docxFile);
         } else if (isEpub) {
           const epubFile = await EpubViewerService.readEpubFile(stored.file);
           setExtractedText(await epubFile.text());
@@ -61,7 +63,7 @@ export default function Home() {
         } else if (isDoc) {
           const docFile = await DocLegacyViewerService.readDocFile(stored.file);
           setExtractedText(await docFile.text());
-          setTextFile(docFile);
+          setHtmlFile(docFile);
         }
       }
     } catch (error) {
@@ -91,6 +93,7 @@ export default function Home() {
     setPdfFile(file);
     setExtractedText('');
     setTextFile(null);
+    setHtmlFile(null);
     setIsExtracting(true);
 
     try {
@@ -128,7 +131,7 @@ export default function Home() {
         const docxFile = await DocxViewerService.readDocxFile(file);
         const text = await docxFile.text();
         setExtractedText(text);
-        setTextFile(docxFile);
+        setHtmlFile(docxFile);
         // Guardar en IndexedDB
         await StorageService.saveDocument(file, text);
       } else if (isEpub) {
@@ -144,7 +147,7 @@ export default function Home() {
         const docFile = await DocLegacyViewerService.readDocFile(file);
         const text = await docFile.text();
         setExtractedText(text);
-        setTextFile(docFile);
+        setHtmlFile(docFile);
         // Guardar en IndexedDB
         await StorageService.saveDocument(file, text);
       }
@@ -162,13 +165,14 @@ export default function Home() {
     setPdfFile(null);
     setExtractedText('');
     setTextFile(null);
+    setHtmlFile(null);
   };
 
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col relative">
-      {/* Botón flotante de carga - Solo cuando hay DocumentViewer activo */}
+      {/* Botón flotante de carga - Solo cuando hay DocumentViewer o HtmlViewer activo */}
       <AnimatePresence>
-        {textFile && (
+        {(textFile || htmlFile) && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -233,6 +237,17 @@ export default function Home() {
               >
                 <DocumentViewer textFile={textFile} extractedText={extractedText} />
               </motion.div>
+            ) : htmlFile ? (
+              <motion.div
+                key="html-viewer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="flex-1"
+              >
+                <HtmlViewer htmlFile={htmlFile} />
+              </motion.div>
             ) : (
               <motion.div
                 key="welcome-screen"
@@ -260,9 +275,9 @@ export default function Home() {
         )}
       </div>
 
-      {/* Botones de carga - Debajo del panel - Solo cuando NO hay DocumentViewer activo */}
+      {/* Botones de carga - Debajo del panel - Solo cuando NO hay DocumentViewer ni HtmlViewer activo */}
       <AnimatePresence>
-        {!textFile && (
+        {!textFile && !htmlFile && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

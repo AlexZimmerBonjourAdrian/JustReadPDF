@@ -25,9 +25,9 @@ export class DocxViewerService {
   }
 
   static isValidDocxFile(file: File): boolean {
+    // Solo aceptar archivos DOCX reales (son archivos ZIP)
+    // NO aceptar archivos .doc legacy (son binarios OLE2)
     return file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
-           file.type === 'application/msword' ||
-           file.name.endsWith('.docx') ||
-           file.name.endsWith('.doc');
+           file.name.endsWith('.docx');
   }
 }
