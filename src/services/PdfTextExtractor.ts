@@ -1,5 +1,6 @@
 import { convert } from '@pdf2md/core';
-import Tesseract from 'tesseract.js';
+import { OcrService } from './OcrService';
+import { TextFormatterService } from './TextFormatterService';
 
 export class PdfTextExtractor {
   private static MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -109,132 +110,18 @@ export class PdfTextExtractor {
       
       if (fullText.trim().length === 0) {
         console.warn('Texto vacío detectado, PDF probablemente escaneado. Iniciando OCR...');
-        return await this.extractWithOCR(file, progressCallback);
+        const ocrText = await OcrService.extractTextFromPDF(file, progressCallback);
+        return TextFormatterService.formatTextToMarkdown(ocrText);
       }
       
       console.log(`Texto extraído con react-pdf: ${fullText.length} caracteres`);
       
       // Aplicar formato básico al texto extraído
-      return this.formatTextToMarkdown(fullText);
+      return TextFormatterService.formatTextToMarkdown(fullText);
       
     } catch (error) {
       console.error('Error en extractWithReactPdf:', error);
       throw new Error(`Error al extraer texto con react-pdf: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    }
-  }
-
-  /**
-   * Extrae texto usando OCR para PDFs escaneados
-   * @param file Archivo PDF a procesar
-   * @param progressCallback Callback opcional para reportar progreso de OCR
-   * @returns Texto extraído del PDF
-   */
-  private static async extractWithOCR(file: File, progressCallback?: (progress: number) => void): Promise<string> {
-    try {
-      console.log('Iniciando OCR para PDF escaneado...');
-      
-      const pdfjs = await this.getPdfjs();
-      if (!pdfjs) {
-        throw new Error('pdfjs no está disponible en este entorno');
-      }
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
-      const pdf = await loadingTask.promise;
-      
-      console.log(`PDF cargado para OCR, ${pdf.numPages} páginas`);
-      
-      // Crear 2 workers para procesamiento paralelo
-      const worker1 = await Tesseract.createWorker('eng', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text' && progressCallback) {
-            progressCallback(m.progress * 100);
-          }
-          console.log(`OCR Worker 1: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
-        }
-      });
-      
-      const worker2 = await Tesseract.createWorker('eng', 1, {
-        logger: (m) => {
-          console.log(`OCR Worker 2: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
-        }
-      });
-      
-      let fullText = '';
-      const totalPages = pdf.numPages;
-      
-      // Procesar páginas en paralelo con 2 workers
-      const promises: Promise<string>[] = [];
-      
-      for (let i = 1; i <= totalPages; i++) {
-        const worker = i % 2 === 0 ? worker2 : worker1;
-        
-        const pagePromise = (async () => {
-          console.log(`Procesando página ${i}/${totalPages} con OCR...`);
-          
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 2.0 }); // 144 DPI para mejor velocidad
-          
-          // Crear canvas
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-          const ctx = canvas.getContext('2d');
-          
-          if (!ctx) {
-            throw new Error('No se pudo obtener contexto del canvas');
-          }
-          
-          // Fondo blanco para evitar ruido
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          
-          // Renderizar página al canvas
-          await page.render({ canvasContext: ctx, viewport, canvas }).promise;
-          
-          // Convertir a BMP para encoding más rápido
-          const blob = await new Promise<Blob>((resolve) => {
-            canvas.toBlob((blob) => {
-              resolve(blob!);
-            }, 'image/bmp');
-          });
-          
-          // OCR del canvas
-          const { data: { text } } = await worker.recognize(blob);
-          
-          console.log(`Página ${i}/${totalPages} completada con OCR`);
-          
-          // Limpiar canvas para liberar memoria
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
-          return text;
-        })();
-        
-        promises.push(pagePromise);
-        
-        // Procesar hasta 4 páginas en paralelo para no saturar memoria
-        if (promises.length >= 4 || i === totalPages) {
-          const results = await Promise.all(promises);
-          fullText += results.join('\n\n');
-          promises.length = 0; // Limpiar array de promesas
-        }
-      }
-      
-      await worker1.terminate();
-      await worker2.terminate();
-      
-      if (fullText.trim().length === 0) {
-        throw new Error('No se pudo extraer texto con OCR. El PDF puede no tener texto legible.');
-      }
-      
-      console.log(`Texto extraído con OCR: ${fullText.length} caracteres`);
-      
-      // Aplicar formato básico al texto extraído
-      return this.formatTextToMarkdown(fullText);
-      
-    } catch (error) {
-      console.error('Error en extractWithOCR:', error);
-      throw new Error(`Error al extraer texto con OCR: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
 
@@ -263,30 +150,6 @@ export class PdfTextExtractor {
       console.error(`Error extrayendo página ${pageNumber}:`, error);
       return '';
     }
-  }
-
-  /**
-   * Formatea texto plano a markdown básico
-   * @param text Texto plano a formatear
-   * @returns Texto formateado en markdown
-   */
-  private static formatTextToMarkdown(text: string): string {
-    // Detectar posibles headers (líneas en mayúsculas o con palabras clave)
-    const lines = text.split('\n');
-    const formattedLines = lines.map(line => {
-      const trimmed = line.trim();
-      
-      // Detectar headers (líneas cortas en mayúsculas o con patrones específicos)
-      if (trimmed.length > 0 && trimmed.length < 100 && 
-          (trimmed === trimmed.toUpperCase() || 
-           /^(CHAPTER|SECTION|PART|INTRODUCTION|CONCLUSION|REFERENCES|ABSTRACT|TABLE|FIGURE)/i.test(trimmed))) {
-        return `## ${trimmed}`;
-      }
-      
-      return line;
-    });
-    
-    return formattedLines.join('\n');
   }
 
   /**

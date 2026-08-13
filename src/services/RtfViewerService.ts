@@ -1,3 +1,5 @@
+import { TextFormatterService } from './TextFormatterService';
+
 export class RtfViewerService {
   static async readRtfFile(file: File): Promise<File> {
     return new Promise((resolve, reject) => {
@@ -6,7 +8,7 @@ export class RtfViewerService {
       reader.onload = (e) => {
         const content = e.target?.result as string;
         const plainText = this.extractTextFromRtf(content);
-        const formattedContent = this.formatTextToMarkdown(plainText);
+        const formattedContent = TextFormatterService.formatTextToMarkdown(plainText);
         
         // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
         const textBlob = new Blob([formattedContent], { type: 'text/markdown' });
@@ -48,41 +50,6 @@ export class RtfViewerService {
     text = text.replace(/\n\s*\n/g, '\n\n');
     
     return text.trim();
-  }
-
-  static formatTextToMarkdown(text: string): string {
-    const lines = text.split('\n');
-    const formattedLines: string[] = [];
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Detectar líneas que podrían ser títulos (cortas, solas, sin punto al final)
-      if (trimmedLine.length > 0 && 
-          trimmedLine.length < 80 && 
-          !trimmedLine.endsWith('.') &&
-          !trimmedLine.endsWith(',') &&
-          !trimmedLine.endsWith(';') &&
-          !trimmedLine.endsWith(':') &&
-          /^[A-ZÁÉÍÓÚÑ]/.test(trimmedLine)) {
-        // Es probable que sea un título
-        formattedLines.push(`## ${trimmedLine}`);
-      } 
-      // Detectar listas (líneas que comienzan con -, *, números)
-      else if (/^[\-\*\•]\s/.test(trimmedLine) || /^\d+[\.\)]\s/.test(trimmedLine)) {
-        formattedLines.push(trimmedLine);
-      }
-      // Detectar párrafos vacíos
-      else if (trimmedLine === '') {
-        formattedLines.push('');
-      }
-      // Texto normal - mantener como párrafo
-      else if (trimmedLine.length > 0) {
-        formattedLines.push(trimmedLine);
-      }
-    }
-    
-    return formattedLines.join('\n\n');
   }
 
   static isValidRtfFile(file: File): boolean {

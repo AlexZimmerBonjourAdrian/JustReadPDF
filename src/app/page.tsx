@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PdfTextExtractor } from '@/services/PdfTextExtractor';
 import { TxtViewerService } from '@/services/TxtViewerService';
 import { RtfViewerService } from '@/services/RtfViewerService';
+import { DocxViewerService } from '@/services/DocxViewerService';
+import { EpubViewerService } from '@/services/EpubViewerService';
 import { StorageService } from '@/services/StorageService';
 import DocumentViewer from '@/components/DocumentViewer';
 
@@ -31,6 +33,8 @@ export default function Home() {
         const isPdf = stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf');
         const isTxt = TxtViewerService.isValidTxtFile(stored.file);
         const isRtf = RtfViewerService.isValidRtfFile(stored.file);
+        const isDocx = DocxViewerService.isValidDocxFile(stored.file);
+        const isEpub = EpubViewerService.isValidEpubFile(stored.file);
 
         if (isPdf) {
           const textBlob = new Blob([stored.extractedText], { type: 'text/markdown' });
@@ -44,6 +48,14 @@ export default function Home() {
           const rtfFile = await RtfViewerService.readRtfFile(stored.file);
           setExtractedText(await rtfFile.text());
           setTextFile(rtfFile);
+        } else if (isDocx) {
+          const docxFile = await DocxViewerService.readDocxFile(stored.file);
+          setExtractedText(await docxFile.text());
+          setTextFile(docxFile);
+        } else if (isEpub) {
+          const epubFile = await EpubViewerService.readEpubFile(stored.file);
+          setExtractedText(await epubFile.text());
+          setTextFile(epubFile);
         }
       }
     } catch (error) {
@@ -61,9 +73,11 @@ export default function Home() {
     const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
     const isTxt = TxtViewerService.isValidTxtFile(file);
     const isRtf = RtfViewerService.isValidRtfFile(file);
+    const isDocx = DocxViewerService.isValidDocxFile(file);
+    const isEpub = EpubViewerService.isValidEpubFile(file);
 
-    if (!isPdf && !isTxt && !isRtf) {
-      alert('Por favor sube un archivo PDF, TXT o RTF');
+    if (!isPdf && !isTxt && !isRtf && !isDocx && !isEpub) {
+      alert('Por favor sube un archivo PDF, TXT, RTF, DOCX o EPUB');
       return;
     }
 
@@ -102,6 +116,22 @@ export default function Home() {
         setTextFile(rtfFile);
         // Guardar en IndexedDB
         await StorageService.saveDocument(file, text);
+      } else if (isDocx) {
+        // Procesar DOCX
+        const docxFile = await DocxViewerService.readDocxFile(file);
+        const text = await docxFile.text();
+        setExtractedText(text);
+        setTextFile(docxFile);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
+      } else if (isEpub) {
+        // Procesar EPUB
+        const epubFile = await EpubViewerService.readEpubFile(file);
+        const text = await epubFile.text();
+        setExtractedText(text);
+        setTextFile(epubFile);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
       }
     } catch (error) {
       console.error('Error processing file:', error);
@@ -136,7 +166,7 @@ export default function Home() {
                 <span>Cargar archivo</span>
                 <input
                   type="file"
-                  accept=".pdf,.txt,.rtf"
+                  accept=".pdf,.txt,.rtf,.docx,.epub"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
@@ -199,7 +229,7 @@ export default function Home() {
               >
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-bold mb-4">JustReadPDF</h2>
-                  <p className="text-lg mb-2">Sube un archivo PDF, TXT o RTF para ver su contenido</p>
+                  <p className="text-lg mb-2">Sube un archivo PDF, TXT, RTF, DOCX o EPUB para ver su contenido</p>
                   <p className="text-sm mb-4">
                     El texto se muestra con formato preservado, listo para copiar y traducir
                   </p>
@@ -230,7 +260,7 @@ export default function Home() {
                 <span className="block text-sm md:text-base">Cargar archivo</span>
                 <input
                   type="file"
-                  accept=".pdf,.txt,.rtf"
+                  accept=".pdf,.txt,.rtf,.docx,.epub"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
