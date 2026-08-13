@@ -10,15 +10,16 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@file-viewer/doc": "^2.2.9",
         "@heroicons/react": "^2.2.0",
         "@iamjariwala/react-doc-viewer": "^1.8.0",
         "@omer-go/docx-parser-converter-ts": "^1.0.0",
         "@pdf2md/core": "^0.3.0",
         "@shahajimbhosle/local-doc-viewer": "^1.0.8",
-        "epub.js": "^0.2.15",
         "file-saver": "^2.0.5",
         "framer-motion": "^12.6.3",
         "geist": "^1.3.1",
+        "jszip": "^3.10.1",
         "next": "^16.1.6",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",

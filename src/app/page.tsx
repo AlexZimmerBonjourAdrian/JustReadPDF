@@ -7,6 +7,7 @@ import { TxtViewerService } from '@/services/TxtViewerService';
 import { RtfViewerService } from '@/services/RtfViewerService';
 import { DocxViewerService } from '@/services/DocxViewerService';
 import { EpubViewerService } from '@/services/EpubViewerService';
+import { DocLegacyViewerService } from '@/services/DocLegacyViewerService';
 import { StorageService } from '@/services/StorageService';
 import DocumentViewer from '@/components/DocumentViewer';
 
@@ -35,6 +36,7 @@ export default function Home() {
         const isRtf = RtfViewerService.isValidRtfFile(stored.file);
         const isDocx = DocxViewerService.isValidDocxFile(stored.file);
         const isEpub = EpubViewerService.isValidEpubFile(stored.file);
+        const isDoc = DocLegacyViewerService.isValidDocFile(stored.file);
 
         if (isPdf) {
           const textBlob = new Blob([stored.extractedText], { type: 'text/markdown' });
@@ -56,6 +58,10 @@ export default function Home() {
           const epubFile = await EpubViewerService.readEpubFile(stored.file);
           setExtractedText(await epubFile.text());
           setTextFile(epubFile);
+        } else if (isDoc) {
+          const docFile = await DocLegacyViewerService.readDocFile(stored.file);
+          setExtractedText(await docFile.text());
+          setTextFile(docFile);
         }
       }
     } catch (error) {
@@ -75,9 +81,10 @@ export default function Home() {
     const isRtf = RtfViewerService.isValidRtfFile(file);
     const isDocx = DocxViewerService.isValidDocxFile(file);
     const isEpub = EpubViewerService.isValidEpubFile(file);
+    const isDoc = DocLegacyViewerService.isValidDocFile(file);
 
-    if (!isPdf && !isTxt && !isRtf && !isDocx && !isEpub) {
-      alert('Por favor sube un archivo PDF, TXT, RTF, DOCX o EPUB');
+    if (!isPdf && !isTxt && !isRtf && !isDocx && !isEpub && !isDoc) {
+      alert('Por favor sube un archivo PDF, TXT, RTF, DOC, DOCX o EPUB');
       return;
     }
 
@@ -132,6 +139,14 @@ export default function Home() {
         setTextFile(epubFile);
         // Guardar en IndexedDB
         await StorageService.saveDocument(file, text);
+      } else if (isDoc) {
+        // Procesar DOC (legacy)
+        const docFile = await DocLegacyViewerService.readDocFile(file);
+        const text = await docFile.text();
+        setExtractedText(text);
+        setTextFile(docFile);
+        // Guardar en IndexedDB
+        await StorageService.saveDocument(file, text);
       }
     } catch (error) {
       console.error('Error processing file:', error);
@@ -166,7 +181,7 @@ export default function Home() {
                 <span>Cargar archivo</span>
                 <input
                   type="file"
-                  accept=".pdf,.txt,.rtf,.docx,.epub"
+                  accept=".pdf,.txt,.rtf,.doc,.docx,.epub"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
@@ -229,7 +244,7 @@ export default function Home() {
               >
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-bold mb-4">JustReadPDF</h2>
-                  <p className="text-lg mb-2">Sube un archivo PDF, TXT, RTF, DOCX o EPUB para ver su contenido</p>
+                  <p className="text-lg mb-2">Sube un archivo PDF, TXT, RTF, DOC, DOCX o EPUB para ver su contenido</p>
                   <p className="text-sm mb-4">
                     El texto se muestra con formato preservado, listo para copiar y traducir
                   </p>
@@ -260,7 +275,7 @@ export default function Home() {
                 <span className="block text-sm md:text-base">Cargar archivo</span>
                 <input
                   type="file"
-                  accept=".pdf,.txt,.rtf,.docx,.epub"
+                  accept=".pdf,.txt,.rtf,.doc,.docx,.epub"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
