@@ -8,6 +8,7 @@ import { FileProcessorFactory } from '@/services/FileProcessorFactory';
 import { ProcessedFile } from '@/services/FileProcessorStrategy';
 import { ViewerFactory } from '@/components/ViewerFactory';
 import { ViewerProps } from '@/components/strategies/ViewerStrategy';
+import ToolsPanel from '@/components/ToolsPanel';
 
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -18,10 +19,26 @@ export default function Home() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
+  const [isConvertingToPng, setIsConvertingToPng] = useState(false);
+  const [pngConversionProgress, setPngConversionProgress] = useState<number>(0);
+  const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false);
 
   useEffect(() => {
     loadStoredDocument();
   }, []);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Secret key combination: Ctrl + Shift + P
+      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        setIsToolsPanelOpen(!isToolsPanelOpen);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isToolsPanelOpen]);
 
   const loadStoredDocument = async () => {
     try {
@@ -140,6 +157,15 @@ export default function Home() {
                   className="hidden"
                 />
               </label>
+              <ToolsPanel
+                pdfFile={pdfFile}
+                extractedText={extractedText}
+                onPngConversionStart={() => setIsConvertingToPng(true)}
+                onPngConversionEnd={() => {
+                  setIsConvertingToPng(false);
+                  setPngConversionProgress(0);
+                }}
+              />
               <button
                 onClick={handleClearStorage}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm shadow-lg"
@@ -173,6 +199,18 @@ export default function Home() {
                 />
               </div>
             )}
+          </div>
+        ) : isConvertingToPng ? (
+          <div className="flex-1 bg-gray-800 rounded-lg p-8 text-center text-gray-300 flex flex-col items-center justify-center">
+            <p className="text-lg mb-4">
+              Convirtiendo PDF a imágenes PNG... {pngConversionProgress.toFixed(1)}%
+            </p>
+            <div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-purple-600 transition-all duration-300"
+                style={{ width: `${pngConversionProgress}%` }}
+              />
+            </div>
           </div>
         ) : (
           <AnimatePresence mode="wait">
