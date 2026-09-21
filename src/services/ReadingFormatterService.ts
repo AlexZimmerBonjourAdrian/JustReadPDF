@@ -12,6 +12,10 @@ export interface ReadingOptions {
 }
 
 export class ReadingFormatterService {
+  private static escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  }
+
   private static defaultOptions: ReadingOptions = {
     theme: 'dark',
     typography: 'serif',
@@ -70,6 +74,7 @@ export class ReadingFormatterService {
     const fontFamily = this.typographyFonts[opts.typography];
 
     const formattedContent = this.applyReadingFormatting(text, opts);
+    const safeFileName = this.escapeHtml(fileName);
 
     return `
 <!DOCTYPE html>
@@ -77,7 +82,7 @@ export class ReadingFormatterService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - Modo Lectura</title>
+  <title>${safeFileName} - Modo Lectura</title>
   <style>
     * {
       box-sizing: border-box;
@@ -199,7 +204,7 @@ export class ReadingFormatterService {
   </style>
 </head>
 <body>
-  <h1>${fileName}</h1>
+  <h1>${safeFileName}</h1>
   <div class="content">
     ${formattedContent}
   </div>
@@ -247,36 +252,30 @@ export class ReadingFormatterService {
   }
 
   private static markdownToHtml(markdown: string): string {
-    let html = markdown
-      // Headers
-      .replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
-      .replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
-      .replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
-      .replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
-      .replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
-      .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Code inline
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      // Links
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-      // Images
-      .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;">')
-      // Line breaks
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    
-    // Envolver en párrafos
-    html = `<p>${html}</p>`;
-    
-    // Limpiar párrafos vacíos
-    html = html.replace(/<p><\/p>/g, '');
-    html = html.replace(/<p>\s*<\/p>/g, '');
-    
-    return html;
+    const blocks = markdown.split(/\n\n+/);
+    const htmlBlocks = blocks.map(block => {
+      const trimmed = block.trim();
+      if (!trimmed) return '';
+      let html = trimmed
+        .replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
+        .replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
+        .replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
+        .replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
+        .replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
+        .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+        .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;">')
+        .replace(/\n/g, '<br>');
+      // Si ya es block element (h1-6, ul, ol, blockquote, pre, table, hr), no envolver en <p>
+      if (/^<(h[1-6]|ul|ol|blockquote|pre|table|hr)/i.test(html)) {
+        return html;
+      }
+      return `<p>${html}</p>`;
+    }).filter(Boolean);
+    return htmlBlocks.join('\n');
   }
 
   static async downloadAsHtml(

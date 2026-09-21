@@ -7,24 +7,12 @@ export class DocProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File): Promise<ProcessedFile> {
-    const docFile = await DocLegacyViewerService.readDocFile(file);
-    const text = await docFile.text();
-    
-    return {
-      file: docFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await DocLegacyViewerService.readDocFileAsHtml(file);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {
-    const docFile = await DocLegacyViewerService.readDocFile(storedFile);
-    const text = await docFile.text();
-    
-    return {
-      file: docFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await DocLegacyViewerService.readDocFileAsHtml(storedFile);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: storedFile.name };
   }
 }

@@ -16,31 +16,33 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+    <header className="bg-[#FAFAF8] border-b border-[#E6E2DB] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link href="/" onClick={closeMobileMenu} className="flex items-center space-x-3 group">
-            <div className="bg-gradient-to-br from-red-500 to-red-600 p-2.5 rounded-xl shadow-lg shadow-red-500/20 group-hover:shadow-red-500/30 transition-all duration-300">
-              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <div className="flex justify-between items-center h-[68px]">
+          {/* Logo - editorial solid, no gradient */}
+          <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-3 group">
+            <div className="bg-[#C0392B] p-[9px] rounded-[10px] group-hover:bg-[#A93226] transition-colors duration-200">
+              <svg className="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h7l3 3v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14 7v3h3" />
               </svg>
             </div>
-            <div className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
-              JustReadPDF
+            <div className="flex items-baseline gap-[7px]">
+              <span className="text-[19px] font-bold tracking-[-0.02em] text-[#111214] font-serif">JustReadPDF</span>
+              <span className="hidden sm:inline text-[10px] tracking-[0.14em] uppercase text-[#9A9590] font-medium">Privado · Local</span>
             </div>
           </Link>
           
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-10">
-            <Link href="/" className="text-gray-700 hover:text-red-600 transition-colors font-medium text-sm tracking-wide">
-              Home
+          {/* Desktop Navigation - underline, no color hover */}
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="/" className="relative text-[13px] tracking-[0.08em] uppercase font-medium text-[#111214] py-1 after:absolute after:left-0 after:-bottom-[3px] after:h-px after:w-full after:bg-[#111214] after:opacity-100">
+              Inicio
             </Link>
-            <Link href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium text-sm tracking-wide">
-              Tools
+            <Link href="#" className="relative text-[13px] tracking-[0.08em] uppercase font-medium text-[#6B6560] hover:text-[#111214] transition-colors py-1 after:absolute after:left-0 after:-bottom-[3px] after:h-px after:w-0 hover:after:w-full after:bg-[#111214] after:transition-all after:duration-200">
+              Herramientas
             </Link>
-            <Link href="#" className="text-gray-700 hover:text-red-600 transition-colors font-medium text-sm tracking-wide">
-              About
+            <Link href="#" className="relative text-[13px] tracking-[0.08em] uppercase font-medium text-[#6B6560] hover:text-[#111214] transition-colors py-1">
+              Acerca
             </Link>
           </nav>
 

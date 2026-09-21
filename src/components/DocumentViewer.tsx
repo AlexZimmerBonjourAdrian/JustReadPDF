@@ -16,9 +16,9 @@ export default function DocumentViewer({ textFile, extractedText }: DocumentView
   };
 
   return (
-    <div id="doc-viewer" className="flex-1 bg-gray-800 rounded-lg overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between p-3 bg-gray-900 border-b border-gray-700">
-        <span className="text-sm text-gray-300 truncate">{textFile.name}</span>
+    <div id="doc-viewer" className="flex-1 bg-[#FAFAF8] overflow-hidden flex flex-col">
+      <div className="flex items-center justify-between px-4 h-[40px] bg-white border-b border-[#E6E2DB] shrink-0">
+        <span className="text-[11px] font-mono tracking-wide text-[#6B6560] truncate max-w-[40ch]">{textFile.name}</span>
         {extractedText && <SearchBar text={extractedText} onResultClick={handleResultClick} />}
       </div>
       <style jsx global>{`

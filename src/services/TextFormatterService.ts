@@ -4,6 +4,10 @@ export class TextFormatterService {
    * @param text Texto OCR crudo
    * @returns Texto limpio
    */
+  private static escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+  }
+
   static cleanOcrText(text: string): string {
     const lines = text.split('\n');
     const cleanedLines: string[] = [];
@@ -16,12 +20,10 @@ export class TextFormatterService {
         continue;
       }
       
-      // Detectar y remover headers/footers de página
-      // Patrones: líneas muy cortas con números, o títulos en mayúsculas solos
-      const isPageHeader = /^(\d+\s+)?[A-Z\s]{3,30}$/.test(line) && line.length < 50;
+      // Solo remover números de página aislados, NO headers en mayúsculas (preserva títulos como INTRODUCTION)
       const isPageNumber = /^\d+$/.test(line) && line.length < 4;
       
-      if (isPageHeader || isPageNumber) {
+      if (isPageNumber) {
         console.log(`Removiendo header/footer: "${line}"`);
         continue;
       }
@@ -95,13 +97,14 @@ export class TextFormatterService {
    * @returns HTML formateado
    */
   static applyFormattingTemplate(content: string, fileName: string): string {
+    const safeFileName = this.escapeHtml(fileName);
     return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${fileName} - JustReadPDF</title>
+  <title>${safeFileName} - JustReadPDF</title>
   <style>
     * {
       box-sizing: border-box;
@@ -218,7 +221,7 @@ export class TextFormatterService {
   </style>
 </head>
 <body>
-  <h1>${fileName}</h1>
+  <h1>${safeFileName}</h1>
   <div class="content">
     ${content}
   </div>

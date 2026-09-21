@@ -7,24 +7,12 @@ export class DocxProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File): Promise<ProcessedFile> {
-    const docxFile = await DocxViewerService.readDocxFile(file);
-    const text = await docxFile.text();
-    
-    return {
-      file: docxFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await DocxViewerService.readDocxFileAsHtml(file);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {
-    const docxFile = await DocxViewerService.readDocxFile(storedFile);
-    const text = await docxFile.text();
-    
-    return {
-      file: docxFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await DocxViewerService.readDocxFileAsHtml(storedFile);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: storedFile.name };
   }
 }

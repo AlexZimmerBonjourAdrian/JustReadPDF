@@ -76,49 +76,43 @@ export default function ToolsPanel({
   return (
     <div className="relative">
       <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="px-3 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
-        title="Herramientas secretas (Ctrl+Shift+P)"
+        className="px-3 py-[7px] bg-white border border-[#E6E2DB] text-[#111214] rounded-[8px] hover:border-[#111214] transition-colors flex items-center gap-2"
+        title="Herramientas (Ctrl+Shift+P)"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg className="w-[14px] h-[14px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h3M10.5 12h3M10.5 18h3M6 6h.01M6 12h.01M6 18h.01" />
+          <rect x="3" y="3" width="18" height="18" rx="3" />
         </svg>
-        <span className="text-sm">Herramientas</span>
+        <span className="text-[12px] font-medium">Herramientas</span>
       </motion.button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="absolute top-full right-0 mt-2 w-96 bg-gray-800 rounded-lg shadow-xl border border-gray-700 p-4 z-50"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="absolute top-full right-0 mt-2 w-[380px] bg-white rounded-[14px] shadow-[0_16px_40px_rgba(0,0,0,0.12)] border border-[#E6E2DB] p-4 z-50"
           >
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Herramientas Secretas
-            </h3>
+            <h3 className="text-[11px] tracking-[0.12em] uppercase font-semibold text-[#111214] mb-4">Herramientas</h3>
 
             {/* Herramienta 1: PDF a PNG */}
-            <div className="mb-4 p-3 bg-gray-700 rounded-lg">
+            <div className="mb-3 p-3 bg-[#FAFAF8] rounded-[10px] border border-[#E6E2DB]">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-white font-medium flex items-center gap-2">
-                  <span className="text-lg">📷</span>
-                  PDF a Imágenes PNG
+                <h4 className="text-[#111214] text-[13px] font-semibold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-white border border-[#E6E2DB] flex items-center justify-center text-[11px]">◧</span>
+                  PDF → Imágenes PNG
                 </h4>
                 {isConvertingToPng && (
                   <span className="text-xs text-purple-400">{pngProgress.toFixed(1)}%</span>
                 )}
               </div>
-              <p className="text-gray-400 text-sm mb-3">
-                Convierte cada página del PDF en imagen PNG y descarga como ZIP
+              <p className="text-[#6B6560] text-[12px] leading-[1.5] mb-3">
+                Convierte cada página en PNG y descarga ZIP.
               </p>
               <button
                 onClick={handleConvertToPng}
@@ -148,11 +142,11 @@ export default function ToolsPanel({
             </div>
 
             {/* Herramienta 2: Formato de lectura */}
-            <div className="p-3 bg-gray-700 rounded-lg">
+            <div className="p-3 bg-[#FAFAF8] rounded-[10px] border border-[#E6E2DB]">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="text-white font-medium flex items-center gap-2">
-                  <span className="text-lg">📖</span>
-                  Formato de Lectura Cómoda
+                <h4 className="text-[#111214] text-[13px] font-semibold flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-white border border-[#E6E2DB] flex items-center justify-center text-[11px]">≡</span>
+                  Lectura cómoda
                 </h4>
                 {isFormattingReading && (
                   <span className="text-xs text-blue-400">Procesando...</span>

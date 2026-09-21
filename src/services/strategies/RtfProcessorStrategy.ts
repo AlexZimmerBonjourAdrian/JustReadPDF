@@ -7,24 +7,12 @@ export class RtfProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File): Promise<ProcessedFile> {
-    const rtfFile = await RtfViewerService.readRtfFile(file);
-    const text = await rtfFile.text();
-    
-    return {
-      file: rtfFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await RtfViewerService.readRtfFileAsHtml(file);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {
-    const rtfFile = await RtfViewerService.readRtfFile(storedFile);
-    const text = await rtfFile.text();
-    
-    return {
-      file: rtfFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await RtfViewerService.readRtfFileAsHtml(storedFile);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: storedFile.name };
   }
 }

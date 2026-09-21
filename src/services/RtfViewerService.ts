@@ -1,6 +1,7 @@
 import { TextFormatterService } from './TextFormatterService';
 
 export class RtfViewerService {
+  // LEGACY MD - desconectado
   static async readRtfFile(file: File): Promise<File> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -10,7 +11,6 @@ export class RtfViewerService {
         const plainText = this.extractTextFromRtf(content);
         const formattedContent = TextFormatterService.formatTextToMarkdown(plainText);
         
-        // Crear archivo markdown para mostrar con DocumentViewer (preserva formato)
         const textBlob = new Blob([formattedContent], { type: 'text/markdown' });
         const textFileObj = new File([textBlob], `${file.name.replace('.rtf', '')}.md`, { type: 'text/markdown' });
         resolve(textFileObj);
@@ -20,6 +20,24 @@ export class RtfViewerService {
         reject(new Error('Error al leer el archivo RTF'));
       };
       
+      reader.readAsText(file);
+    });
+  }
+
+  static async readRtfFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        const plainText = this.extractTextFromRtf(content);
+        const escaped = plainText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const htmlContent = escaped.split('\n\n').map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('\n');
+        const html = TextFormatterService.applyFormattingTemplate(htmlContent, file.name);
+        const blob = new Blob([html], { type: 'text/html' });
+        const htmlFile = new File([blob], `${file.name.replace(/\.rtf$/i,'')}.html`, { type: 'text/html' });
+        resolve({ htmlFile, plainText });
+      };
+      reader.onerror = () => reject(new Error('Error al leer el archivo RTF'));
       reader.readAsText(file);
     });
   }

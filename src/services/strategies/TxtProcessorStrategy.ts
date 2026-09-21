@@ -7,24 +7,12 @@ export class TxtProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File): Promise<ProcessedFile> {
-    const textFile = await TxtViewerService.readTxtFile(file);
-    const text = await textFile.text();
-    
-    return {
-      file: textFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await TxtViewerService.readTxtFileAsHtml(file);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {
-    const textFile = await TxtViewerService.readTxtFile(storedFile);
-    const text = await textFile.text();
-    
-    return {
-      file: textFile,
-      text,
-      viewer: 'document'
-    };
+    const { htmlFile, plainText } = await TxtViewerService.readTxtFileAsHtml(storedFile);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: storedFile.name };
   }
 }

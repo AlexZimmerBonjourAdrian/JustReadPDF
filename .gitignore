@@ -12,6 +12,21 @@
 
 # testing
 /coverage
+/coverage.lcov
+*.lcov
+junit.xml
+
+# vitest
+.vitest-cache/
+
+# tests - ignorados por git (solo local)
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+__tests__/
+vitest.config.ts
+vitest.setup.ts
 
 # next.js
 /.next/

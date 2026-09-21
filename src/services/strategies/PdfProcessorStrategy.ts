@@ -7,15 +7,15 @@ export class PdfProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File, setOcrProgress?: (progress: number) => void): Promise<ProcessedFile> {
-    const text = await PdfTextExtractor.extractText(file, setOcrProgress || (() => {}));
-    const textBlob = new Blob([text], { type: 'text/markdown' });
-    const textFile = new File([textBlob], `${file.name.replace('.pdf', '')}.md`, { type: 'text/markdown' });
-    
-    return {
-      file: textFile,
-      text,
-      viewer: 'document'
-    };
+    // HTML primario - usa extractHtml para preservar estructura (md queda legacy)
+    const html = await PdfTextExtractor.extractHtml(file);
+    const plainText = await PdfTextExtractor.extractPlainText(file);
+    // Fallback: si html vacío, usar texto plano envuelto
+    const htmlContent = html && html.length > 50 ? html : `<pre>${plainText.replace(/</g,'&lt;')}</pre>`;
+    const fullHtml = htmlContent.includes('<!DOCTYPE') ? htmlContent : `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const htmlFile = new File([blob], `${file.name.replace(/\.pdf$/i,'')}.html`, { type: 'text/html' });
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {

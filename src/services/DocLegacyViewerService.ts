@@ -2,32 +2,28 @@ import { parseMsDocToHtml } from '@file-viewer/doc';
 import { TextFormatterService } from './TextFormatterService';
 
 export class DocLegacyViewerService {
+  // LEGACY MD - desconectado
   static async readDocFile(file: File): Promise<File> {
     try {
-      console.log('Procesando archivo DOC (legacy):', file.name);
-      
-      // Crear ArrayBuffer del archivo
       const arrayBuffer = await file.arrayBuffer();
-      
-      // Parsear DOC a HTML usando @file-viewer/doc
       const rendered = await parseMsDocToHtml(arrayBuffer);
-      
-      // Extraer texto plano del HTML generado
       const plainText = this.extractTextFromHtml(rendered.html);
-      
-      // Aplicar formateo de texto a markdown (siguiendo patrón de otros servicios)
       const formattedText = TextFormatterService.formatTextToMarkdown(plainText);
-      
-      // Crear archivo markdown para mostrar con DocumentViewer
       const textBlob = new Blob([formattedText], { type: 'text/markdown' });
-      const textFileObj = new File([textBlob], `${file.name.replace('.doc', '')}.md`, { type: 'text/markdown' });
-      
-      console.log('DOC (legacy) procesado exitosamente');
-      return textFileObj;
+      return new File([textBlob], `${file.name.replace('.doc', '')}.md`, { type: 'text/markdown' });
     } catch (error) {
-      console.error('Error al procesar DOC (legacy):', error);
       throw new Error(`Error al leer el archivo DOC: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
+  }
+
+  static async readDocFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
+    const arrayBuffer = await file.arrayBuffer();
+    const rendered = await parseMsDocToHtml(arrayBuffer);
+    const plainText = this.extractTextFromHtml(rendered.html);
+    const html = TextFormatterService.applyFormattingTemplate(rendered.html, file.name);
+    const blob = new Blob([html], { type: 'text/html' });
+    const htmlFile = new File([blob], `${file.name.replace(/\.doc$/i,'')}.html`, { type: 'text/html' });
+    return { htmlFile, plainText };
   }
 
   private static extractTextFromHtml(html: string): string {
