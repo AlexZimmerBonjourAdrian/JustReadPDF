@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ViewerInteractionService } from '@/services/ViewerInteractionService';
+import { DocPaletteName } from '@/services/TextFormatterService';
 import { ViewerDisplayData } from '@/types/ViewerData';
 import ViewerToolbar from './ViewerToolbar';
 
 interface HtmlViewerProps {
   displayData: ViewerDisplayData;
   toolbarActions?: React.ReactNode;
+  palette?: DocPaletteName;
+  onPaletteChange?: (palette: DocPaletteName) => void;
 }
 
-export default function HtmlViewer({ displayData, toolbarActions }: HtmlViewerProps) {
+export default function HtmlViewer({ displayData, toolbarActions, palette = 'dark', onPaletteChange }: HtmlViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [htmlContent, setHtmlContent] = useState<string>('');
   const { fileData, content } = displayData;
@@ -33,13 +36,18 @@ export default function HtmlViewer({ displayData, toolbarActions }: HtmlViewerPr
         doc.open();
         doc.write(htmlContent);
         doc.close();
+        ViewerInteractionService.applyPaletteToIframe(iframe, palette);
       }
     }
   }, [htmlContent]);
 
+  useEffect(() => {
+    ViewerInteractionService.applyPaletteToIframe(iframeRef.current, palette);
+  }, [palette]);
+
   return (
     <div id="html-viewer" className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">
-      <ViewerToolbar fileName={fileData.originalFileName || fileData.fileName} plainText={content.plainText} onSearchNavigate={handleResultClick} actions={toolbarActions} />
+      <ViewerToolbar fileName={fileData.originalFileName || fileData.fileName} plainText={content.plainText} onSearchNavigate={handleResultClick} actions={toolbarActions} palette={palette} onPaletteChange={onPaletteChange} />
       <iframe
         ref={iframeRef}
         title={fileData.fileName}

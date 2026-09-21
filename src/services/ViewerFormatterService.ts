@@ -2,6 +2,7 @@
 // Separa extracción (FileProcessor) de presentación (Viewer)
 
 import { TextFormatterService } from './TextFormatterService';
+import { LoggerService } from './LoggerService';
 import { ReadingOptions } from './ReadingFormatterService';
 
 export type ComfortableTheme = 'light' | 'sepia' | 'dark';
@@ -21,18 +22,14 @@ export class ViewerFormatterService {
   };
 
   // Formatea htmlBody crudo (tablas/listas ya preservadas) con template editorial cómodo
-  // Usado por todos los ViewerServices para no duplicar CSS
+  // Usado por todos los ViewerServices para no duplicar CSS.
+  // 1) normaliza negros/blancos del documento (heredan paleta, colores reales se preservan)
+  // 2) envuelve con template de la paleta indicada (variables CSS --jr-*)
   static formatComfortableHtml(htmlBody: string, fileName: string, options: Partial<ViewerFormatOptions> = {}): string {
     const opts = { ...this.defaultOptions, ...options };
-    // Reutiliza TextFormatterService que ya tiene serif 18px 66ch cómodo
-    // Inyecta opciones via reemplazo ligero para no duplicar template
-    let html = TextFormatterService.applyFormattingTemplate(htmlBody, fileName);
-    // Template ya es dark por defecto, ajustar si piden light/sepia
-    if (opts.theme === 'light') {
-      html = html.replace(/background:\s*#1a1a1a/g, 'background: #ffffff').replace(/color:\s*#e5e5e5/g, 'color: #1f1f1f').replace(/#f5f5f5/g, '#111214');
-    } else if (opts.theme === 'sepia') {
-      html = html.replace(/background:\s*#1a1a1a/g, 'background: #FDF6E3').replace(/color:\s*#e5e5e5/g, 'color: #5b4636');
-    }
+    const normalized = TextFormatterService.normalizeTextColors(htmlBody);
+    let html = TextFormatterService.applyFormattingTemplate(normalized, fileName, opts.theme);
+    LoggerService.debug('Formatter', `comfortable html ${fileName} (body ${htmlBody.length} -> html ${html.length} chars, theme ${opts.theme})`);
     if (opts.typography === 'sans-serif') {
       html = html.replace(/'Georgia'[^;]+serif/g, "'Inter', 'Helvetica Neue', sans-serif");
     }

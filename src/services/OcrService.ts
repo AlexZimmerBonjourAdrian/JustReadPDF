@@ -1,5 +1,6 @@
 import Tesseract from 'tesseract.js';
 import { TextFormatterService } from './TextFormatterService';
+import { LoggerService } from './LoggerService';
 
 export class OcrService {
   private static pdfjs: any = null;
@@ -21,8 +22,9 @@ export class OcrService {
    * @returns Texto extraído del PDF
    */
   static async extractTextFromPDF(file: File, progressCallback?: (progress: number) => void): Promise<string> {
+    const end = LoggerService.start('OCR', `extractTextFromPDF ${file.name}`);
     try {
-      console.log('Iniciando OCR para PDF escaneado...');
+      LoggerService.info('OCR', `iniciando OCR para ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       
       const pdfjs = await this.getPdfjs();
       if (!pdfjs) {
@@ -33,7 +35,7 @@ export class OcrService {
       const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
       
-      console.log(`PDF cargado para OCR, ${pdf.numPages} páginas`);
+      LoggerService.info('OCR', `PDF cargado, ${pdf.numPages} páginas`);
       
       // Crear 2 workers para procesamiento paralelo
       const worker1 = await Tesseract.createWorker('eng', 1, {
@@ -41,13 +43,13 @@ export class OcrService {
           if (m.status === 'recognizing text' && progressCallback) {
             progressCallback(m.progress * 100);
           }
-          console.log(`OCR Worker 1: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
+          LoggerService.debug('OCR', `Worker 1: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
         }
       });
       
       const worker2 = await Tesseract.createWorker('eng', 1, {
         logger: (m) => {
-          console.log(`OCR Worker 2: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
+          LoggerService.debug('OCR', `Worker 2: ${m.status}${m.status === 'recognizing text' ? ` ${(m.progress * 100).toFixed(1)}%` : ''}`);
         }
       });
       
@@ -61,7 +63,7 @@ export class OcrService {
         const worker = i % 2 === 0 ? worker2 : worker1;
         
         const pagePromise = (async () => {
-          console.log(`Procesando página ${i}/${totalPages} con OCR...`);
+          LoggerService.debug('OCR', `página ${i}/${totalPages} ...`);
           
           const page = await pdf.getPage(i);
           const viewport = page.getViewport({ scale: 3.0 }); // 216 DPI para mejor precisión
@@ -93,7 +95,7 @@ export class OcrService {
           // OCR del canvas
           const { data: { text } } = await worker.recognize(blob);
           
-          console.log(`Página ${i}/${totalPages} completada con OCR`);
+          LoggerService.debug('OCR', `página ${i}/${totalPages} completada`);
           
           // Limpiar canvas para liberar memoria
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -118,15 +120,17 @@ export class OcrService {
         throw new Error('No se pudo extraer texto con OCR. El PDF puede no tener texto legible.');
       }
       
-      console.log(`Texto extraído con OCR: ${fullText.length} caracteres`);
+      LoggerService.info('OCR', `texto extraído: ${fullText.length} caracteres`);
       
       // Post-procesar texto para limpiar headers/footers y mejorar formato
       const cleanedText = TextFormatterService.cleanOcrText(fullText);
+      LoggerService.debug('OCR', `post-limpieza: ${cleanedText.length} caracteres`);
       
+      end();
       return cleanedText;
       
     } catch (error) {
-      console.error('Error en OcrService.extractTextFromPDF:', error);
+      LoggerService.error('OCR', 'extractTextFromPDF falló:', error);
       throw new Error(`Error al extraer texto con OCR: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }

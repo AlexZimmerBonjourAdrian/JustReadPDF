@@ -1,9 +1,11 @@
 import { docxToHtml } from '@omer-go/docx-parser-converter-ts';
 import { ViewerFormatterService } from './ViewerFormatterService';
+import { LoggerService } from './LoggerService';
 
 export class DocxViewerService {
   static async readDocxFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
     const rawHtml = await docxToHtml(file, { title: file.name });
+    LoggerService.debug('DOCX', `docxToHtml ${file.name} -> ${rawHtml.length} chars`);
     const plainText = this.extractTextFromHtml(rawHtml);
     const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     const bodyContent = bodyMatch && bodyMatch[1] ? bodyMatch[1] : rawHtml;

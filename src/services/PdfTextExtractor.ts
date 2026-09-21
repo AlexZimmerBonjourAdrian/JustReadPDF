@@ -1,6 +1,7 @@
 import { convert } from '@pdf2md/core';
 import { OcrService } from './OcrService';
 import { DocumentStructureService } from './DocumentStructureService';
+import { LoggerService } from './LoggerService';
 
 export class PdfTextExtractor {
   private static MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -23,41 +24,45 @@ export class PdfTextExtractor {
    * @returns Texto markdown extraído del PDF con estructura preservada
    */
   static async extractText(file: File, progressCallback?: (progress: number) => void): Promise<string> {
+    const end = LoggerService.start('PDF', `extractText ${file.name}`);
     try {
       // Validar tamaño del archivo
       if (file.size > this.MAX_FILE_SIZE) {
         throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo permitido: 50MB`);
       }
 
-      console.log(`Procesando PDF: ${file.name}, Tamaño: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      LoggerService.info('PDF', `procesando ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       
       // Intentar primero con pdf2md para archivos pequeños (< 10MB)
       if (file.size < 10 * 1024 * 1024) {
         try {
           const arrayBuffer = await file.arrayBuffer();
-          console.log('ArrayBuffer creado, iniciando conversión con pdf2md...');
+          LoggerService.debug('PDF', 'ArrayBuffer creado, conversión pdf2md ...');
           
           const result = await convert(arrayBuffer);
-          console.log('Conversión pdf2md completada, status:', result.status);
+          LoggerService.debug('PDF', `pdf2md status: ${result.status}`);
           
           if (result.status === 'success' && typeof result.markdown === 'string' && result.markdown.length > 0) {
-            console.log(`Texto extraído con pdf2md: ${result.markdown.length} caracteres`);
+            LoggerService.info('PDF', `pdf2md OK: ${result.markdown.length} caracteres`);
+            end();
             return result.markdown;
           }
           
-          console.warn('pdf2md falló o devolvió resultado vacío, intentando fallback con react-pdf');
+          LoggerService.warn('PDF', 'pdf2md vacío, fallback react-pdf');
         } catch (pdf2mdError) {
-          console.warn('Error con pdf2md, intentando fallback con react-pdf:', pdf2mdError);
+          LoggerService.warn('PDF', 'pdf2md falló, fallback react-pdf:', pdf2mdError);
         }
       } else {
-        console.log('Archivo grande (>10MB), usando react-pdf directamente para mejor rendimiento');
+        LoggerService.debug('PDF', 'archivo >10MB, react-pdf directo');
       }
       
       // Fallback a react-pdf (procesamiento página por página)
-      return await this.extractWithReactPdf(file, progressCallback);
+      const text = await this.extractWithReactPdf(file, progressCallback);
+      end();
+      return text;
       
     } catch (error) {
-      console.error('Error en PdfTextExtractor.extractText:', error);
+      LoggerService.error('PDF', 'extractText falló:', error);
       
       if (error instanceof Error) {
         throw new Error(`Error al procesar PDF: ${error.message}`);
@@ -75,7 +80,7 @@ export class PdfTextExtractor {
    */
   private static async extractWithReactPdf(file: File, progressCallback?: (progress: number) => void): Promise<string> {
     try {
-      console.log('Iniciando extracción con react-pdf (procesamiento página por página)...');
+      LoggerService.debug('PDF', 'extracción react-pdf página por página ...');
       
       const pdfjs = await this.getPdfjs();
       if (!pdfjs) {
@@ -86,7 +91,7 @@ export class PdfTextExtractor {
       const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
       
-      console.log(`PDF cargado con react-pdf, ${pdf.numPages} páginas`);
+      LoggerService.info('PDF', `react-pdf: ${pdf.numPages} páginas`);
       
       let fullText = '';
       const batchSize = 5; // Procesar 5 páginas a la vez para evitar bloqueos
@@ -102,23 +107,23 @@ export class PdfTextExtractor {
         const batchResults = await Promise.all(batchPromises);
         fullText += batchResults.join('\n\n');
         
-        console.log(`Páginas ${i}-${endIndex}/${pdf.numPages} procesadas`);
+        LoggerService.debug('PDF', `páginas ${i}-${endIndex}/${pdf.numPages} procesadas`);
         
         // Pequeña pausa para no bloquear el UI
         await new Promise(resolve => setTimeout(resolve, 10));
       }
       
       if (fullText.trim().length === 0) {
-        console.warn('Texto vacío detectado, PDF probablemente escaneado. Iniciando OCR...');
+        LoggerService.warn('PDF', 'texto vacío, PDF escaneado -> OCR ...');
         return await OcrService.extractTextFromPDF(file, progressCallback);
       }
       
-      console.log(`Texto extraído con react-pdf (structure-aware): ${fullText.length} caracteres`);
+      LoggerService.info('PDF', `react-pdf structure-aware: ${fullText.length} caracteres`);
       // Ya viene con # ## ### por detector, no re-aplicar formatTextToMarkdown que duplicaría headings
       return fullText.replace(/\n{3,}/g, '\n\n').trim();
       
     } catch (error) {
-      console.error('Error en extractWithReactPdf:', error);
+      LoggerService.error('PDF', 'extractWithReactPdf falló:', error);
       throw new Error(`Error al extraer texto con react-pdf: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -135,7 +140,7 @@ export class PdfTextExtractor {
       const items = textContent.items.filter((i: any) => i.str && i.str.trim());
 
       if (items.length === 0) {
-        console.warn(`Página ${pageNumber} no tiene texto extraíble`);
+        LoggerService.debug('PDF', `página ${pageNumber} sin texto extraíble`);
         return '';
       }
 
@@ -159,9 +164,11 @@ export class PdfTextExtractor {
       }
 
       // Unir con saltos: headings separados por doble salto, texto continuo por espacio
+      const headings = mdLines.filter(l => /^#{1,3}\s/.test(l)).length;
+      LoggerService.debug('PDF', `página ${pageNumber}: ${lines.length} líneas, ${headings} headings, body ${bodySize}pt`);
       return mdLines.join('\n\n');
     } catch (error) {
-      console.error(`Error extrayendo página ${pageNumber}:`, error);
+      LoggerService.error('PDF', `extractPageText p${pageNumber} falló:`, error);
       return '';
     }
   }

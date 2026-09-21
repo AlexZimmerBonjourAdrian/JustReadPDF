@@ -6,6 +6,8 @@ interface StoredDocument {
   timestamp: number;
 }
 
+import { LoggerService } from './LoggerService';
+
 export class StorageService {
   private static DB_NAME = 'JustReadPDF_DB';
   private static STORE_NAME = 'documents';
@@ -28,6 +30,7 @@ export class StorageService {
   }
 
   static async saveDocument(file: File, extractedText: string): Promise<void> {
+    const end = LoggerService.start('Storage', `saveDocument ${file.name}`);
     try {
       // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
       // para evitar que la transacción se cierre mientras esperamos
@@ -66,12 +69,16 @@ export class StorageService {
           reject(transaction.error);
         };
       });
+      LoggerService.info('Storage', `saved ${file.name} (${(arrayBuffer.byteLength / 1024).toFixed(1)}KB, texto ${extractedText.length} chars)`);
     } catch (error) {
-      console.error('Error saving document to IndexedDB:', error);
+      LoggerService.error('Storage', 'Error saving document to IndexedDB:', error);
+    } finally {
+      end();
     }
   }
 
   static async loadDocument(): Promise<{ file: File; extractedText: string } | null> {
+    LoggerService.debug('Storage', 'loadDocument ...');
     try {
       const db = await this.openDB();
       const transaction = db.transaction([this.STORE_NAME], 'readonly');
@@ -87,9 +94,11 @@ export class StorageService {
               type: latestDoc.fileType,
             });
             db.close();
+            LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars)`);
             resolve({ file, extractedText: latestDoc.extractedText });
           } else {
             db.close();
+            LoggerService.debug('Storage', 'loadDocument -> null (sin docs)');
             resolve(null);
           }
         };
@@ -99,12 +108,13 @@ export class StorageService {
         };
       });
     } catch (error) {
-      console.error('Error loading document from IndexedDB:', error);
+      LoggerService.error('Storage', 'Error loading document from IndexedDB:', error);
       return null;
     }
   }
 
   static async clearDocuments(): Promise<void> {
+    LoggerService.debug('Storage', 'clearDocuments ...');
     try {
       const db = await this.openDB();
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
@@ -113,9 +123,10 @@ export class StorageService {
 
       transaction.oncomplete = () => {
         db.close();
+        LoggerService.info('Storage', 'documents cleared');
       };
     } catch (error) {
-      console.error('Error clearing documents from IndexedDB:', error);
+      LoggerService.error('Storage', 'Error clearing documents from IndexedDB:', error);
     }
   }
 
@@ -137,7 +148,7 @@ export class StorageService {
         };
       });
     } catch (error) {
-      console.error('Error checking stored documents:', error);
+      LoggerService.error('Storage', 'Error checking stored documents:', error);
       return false;
     }
   }

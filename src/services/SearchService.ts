@@ -1,3 +1,5 @@
+import { LoggerService } from './LoggerService';
+
 export interface SearchResult {
   line: number;
   text: string;
@@ -28,6 +30,7 @@ export class SearchService {
       }
     }
 
+    LoggerService.debug('Search', `"${query}" -> ${results.length} resultados (caseSensitive=${caseSensitive})`);
     return results;
   }
 
@@ -45,7 +48,7 @@ export class SearchService {
   }
 
   static scrollToLine(lineNumber: number): void {
-    // Esta función se implementará cuando se integre con el UI
-    console.log('Scrolling to line:', lineNumber);
+    // Stub: la navegación real vive en ViewerInteractionService
+    LoggerService.debug('Search', `scrollToLine stub, línea ${lineNumber}`);
   }
 }

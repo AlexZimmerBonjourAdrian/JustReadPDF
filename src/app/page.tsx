@@ -7,6 +7,10 @@ import { FileProcessorFactory } from '@/services/FileProcessorFactory';
 import { ProcessedFile } from '@/services/FileProcessorStrategy';
 import { ViewerFactory } from '@/components/ViewerFactory';
 import { ViewerProps } from '@/components/strategies/ViewerStrategy';
+import { LoggerService } from '@/services/LoggerService';
+import { DocumentValidationService } from '@/services/DocumentValidationService';
+import { DocPaletteName } from '@/services/TextFormatterService';
+import EmptyDocumentModal from '@/components/EmptyDocumentModal';
 import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/components/FaithfulViewer'), { ssr: false });
@@ -20,21 +24,36 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'comfortable' | 'faithful'>('comfortable');
+  const [palette, setPalette] = useState<DocPaletteName>('dark');
+  const [emptyDoc, setEmptyDoc] = useState<{ fileName: string; detail: string } | null>(null);
+
+  const resetViewer = () => {
+    setPdfFile(null);
+    setExtractedText('');
+    setViewerFile(null);
+    setViewerType(null);
+    setOriginalFileName('');
+  };
 
   useEffect(() => {
     loadStoredDocument();
   }, []);
 
   const loadStoredDocument = async () => {
+    LoggerService.debug('App', 'loadStoredDocument ...');
     try {
       const stored = await StorageService.loadDocument();
       if (stored) {
+        LoggerService.info('App', `stored encontrado: ${stored.file.name}`);
         setPdfFile(stored.file);
         setExtractedText(stored.extractedText);
         
         const strategy = FileProcessorFactory.getStrategy(stored.file);
         if (strategy) {
-          if (stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf')) {
+          if (!DocumentValidationService.hasExtractableText(stored.extractedText)) {
+            LoggerService.warn('App', `stored sin texto: ${stored.file.name}`);
+            setEmptyDoc({ fileName: stored.file.name, detail: DocumentValidationService.emptyDetail(stored.extractedText) });
+          } else if (stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf')) {
             // PDF HTML desde texto almacenado (legacy md desconectado -> generar html)
             const html = `<html><body><pre style="white-space:pre-wrap">${stored.extractedText.replace(/</g,'&lt;')}</pre></body></html>`;
             const blob = new Blob([html], { type: 'text/html' });
@@ -53,7 +72,7 @@ export default function Home() {
         }
       }
     } catch (error) {
-      console.error('Error loading stored document:', error);
+      LoggerService.error('App', 'loadStoredDocument falló:', error);
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +81,12 @@ export default function Home() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    await processFile(file);
+  };
+
+  const processFile = async (file: File) => {
+    LoggerService.info('App', `upload ${file.name} (${file.type || 'sin-type'}, ${(file.size / 1024).toFixed(1)}KB)`);
+    setEmptyDoc(null);
 
     // Validate file type using factory
     if (!FileProcessorFactory.isValidFile(file)) {
@@ -84,6 +109,16 @@ export default function Home() {
 
       // HTML primario - toda estrategia retorna viewer:'html' (md legacy desconectado)
       const processed: ProcessedFile = await strategy.process(file);
+      LoggerService.info('App', `procesado OK: viewer=${processed.viewer}, texto ${processed.text.length} chars`);
+
+      // Validación: sin texto extraíble -> popup, no viewer vacío
+      if (!DocumentValidationService.hasExtractableText(processed.text)) {
+        resetViewer();
+        await StorageService.clearDocuments();
+        setEmptyDoc({ fileName: file.name, detail: DocumentValidationService.emptyDetail(processed.text) });
+        return;
+      }
+
       setExtractedText(processed.text);
 
       // Set appropriate viewer
@@ -94,8 +129,12 @@ export default function Home() {
       // Save to IndexedDB
       await StorageService.saveDocument(file, processed.text);
     } catch (error) {
-      console.error('Error processing file:', error);
-      alert('Error al procesar el archivo');
+      LoggerService.error('App', 'handleFileUpload falló:', error);
+      resetViewer();
+      setEmptyDoc({
+        fileName: file.name,
+        detail: `No se pudo procesar el archivo${error instanceof Error ? `: ${error.message}` : '.'} Puede estar dañado, protegido o ser una imagen sin texto legible.`,
+      });
     } finally {
       setIsExtracting(false);
       setOcrProgress(0);
@@ -103,6 +142,7 @@ export default function Home() {
   };
 
   const handleClearStorage = async () => {
+    LoggerService.debug('App', 'clear storage');
     await StorageService.clearDocuments();
     setPdfFile(null);
     setExtractedText('');
@@ -167,7 +207,7 @@ export default function Home() {
                   </motion.div>
                 );
               }
-              const viewerProps = { displayData, toolbarActions } as ViewerProps;
+              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: setPalette } as ViewerProps;
               
               return (
                 <motion.div
@@ -226,6 +266,18 @@ export default function Home() {
       </div>
 
       {/* Sin barra inferior - el CTA ya está en welcome asimétrico */}
+
+      {/* Popup validación: documento sin texto */}
+      <AnimatePresence>
+        {emptyDoc && (
+          <EmptyDocumentModal
+            fileName={emptyDoc.fileName}
+            detail={emptyDoc.detail}
+            onClose={() => setEmptyDoc(null)}
+            onSelectFile={(f) => { setEmptyDoc(null); processFile(f); }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

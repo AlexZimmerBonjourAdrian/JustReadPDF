@@ -1,4 +1,5 @@
 import { FileProcessorStrategy } from './FileProcessorStrategy';
+import { LoggerService } from './LoggerService';
 import { PdfProcessorStrategy } from './strategies/PdfProcessorStrategy';
 import { TxtProcessorStrategy } from './strategies/TxtProcessorStrategy';
 import { RtfProcessorStrategy } from './strategies/RtfProcessorStrategy';
@@ -18,10 +19,13 @@ export class FileProcessorFactory {
 
   static getStrategy(file: File): FileProcessorStrategy | null {
     const strategy = this.strategies.find(s => s.canProcess(file));
+    LoggerService.info('Factory', `getStrategy ${file.name} (${file.type || 'sin-type'}, ${(file.size / 1024).toFixed(1)}KB) -> ${strategy?.constructor.name ?? 'null'}`);
     return strategy || null;
   }
 
   static isValidFile(file: File): boolean {
-    return this.strategies.some(s => s.canProcess(file));
+    const valid = this.strategies.some(s => s.canProcess(file));
+    LoggerService.debug('Factory', `isValidFile ${file.name} -> ${valid}`);
+    return valid;
   }
 }

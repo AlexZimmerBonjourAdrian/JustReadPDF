@@ -47,10 +47,14 @@ export interface HtmlViewerViewProps {
   readonly onSearchNavigate: (lineNumber: number) => void;
 }
 
+import type { DocPaletteName } from '@/services/TextFormatterService';
+
 export interface ViewerToolbarViewProps {
   readonly fileName: string;
   readonly onSearchNavigate: (lineNumber: number) => void;
   readonly plainText: string;
+  readonly palette?: DocPaletteName;
+  readonly onPaletteChange?: (palette: DocPaletteName) => void;
 }
 
 export interface ViewerFactoryContext {

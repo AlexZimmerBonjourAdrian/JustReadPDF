@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { LoggerService } from '@/services/LoggerService';
 
 interface FaithfulDocxViewerProps {
   file: File;
@@ -33,9 +34,13 @@ export default function FaithfulDocxViewer({ file }: FaithfulDocxViewerProps) {
           renderFootnotes: true,
           renderEndnotes: true,
         });
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          LoggerService.info('FaithfulDOCX', `render OK ${file.name}`);
+          setLoading(false);
+        }
       } catch (e) {
         if (!cancelled) {
+          LoggerService.error('FaithfulDOCX', `render ${file.name} falló:`, e);
           setError(e instanceof Error ? e.message : 'Error al renderizar DOCX');
           setLoading(false);
         }

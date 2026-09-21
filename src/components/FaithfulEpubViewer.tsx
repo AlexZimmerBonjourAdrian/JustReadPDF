@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { LoggerService } from '@/services/LoggerService';
 
 interface FaithfulEpubViewerProps {
   file: File;
@@ -31,8 +32,12 @@ export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
           'p': { 'line-height': '1.7 !important' },
         });
         await rendition.display();
+        if (!cancelled) LoggerService.info('FaithfulEPUB', `render OK ${file.name}`);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Error al renderizar EPUB');
+        if (!cancelled) {
+          LoggerService.error('FaithfulEPUB', `render ${file.name} falló:`, e);
+          setError(e instanceof Error ? e.message : 'Error al renderizar EPUB');
+        }
       }
     })();
     return () => {

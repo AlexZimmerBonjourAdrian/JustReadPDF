@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { ViewerFormatterService } from './ViewerFormatterService';
+import { LoggerService } from './LoggerService';
 
 export class EpubViewerService {
   static async readEpubFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
@@ -10,6 +11,7 @@ export class EpubViewerService {
     const opfContent = await opfFile.async('string');
     const opfDir = opfFile.name.includes('/') ? opfFile.name.substring(0, opfFile.name.lastIndexOf('/')+1) : '';
     const spineItems = this.parseSpine(opfContent);
+    LoggerService.debug('EPUB', `${file.name}: opf ${opfFile.name}, spine ${spineItems.length} items`);
     let combinedHtml = '';
     let fullText = '';
     const resolvePath = (p: string) => p.startsWith('../') ? p.replace(/^\.\.\//,'') : opfDir + p;

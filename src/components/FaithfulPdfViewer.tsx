@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
+import { LoggerService } from '@/services/LoggerService';
 
 // Worker en el mismo módulo que renderiza (evita overwrite por orden de módulos)
 if (typeof window !== 'undefined') {
@@ -43,7 +44,11 @@ export default function FaithfulPdfViewer({ file }: FaithfulPdfViewerProps) {
         {fileUrl && (
           <Document
             file={fileUrl}
-            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+            onLoadSuccess={({ numPages }) => {
+              LoggerService.info('FaithfulPDF', `${file.name}: ${numPages} páginas`);
+              setNumPages(numPages);
+            }}
+            onLoadError={(err) => LoggerService.error('FaithfulPDF', `load ${file.name} falló:`, err)}
             loading={<p className="text-[12px] text-[#6B7280]">Cargando PDF…</p>}
             error={<p className="text-[12px] text-[#C0392B]">No se pudo renderizar el PDF.</p>}
           >

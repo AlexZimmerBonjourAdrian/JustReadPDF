@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { LoggerService } from './LoggerService';
 
 export class PdfToImageConverterService {
   private static pdfjs: any = null;
@@ -23,7 +24,7 @@ export class PdfToImageConverterService {
         throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo permitido: 50MB`);
       }
 
-      console.log(`Iniciando conversión de PDF a PNG: ${file.name}`);
+      LoggerService.info('PngZip', `conversión PDF a PNG: ${file.name}`);
 
       const pdfjs = await this.getPdfjs();
       if (!pdfjs) {
@@ -34,7 +35,7 @@ export class PdfToImageConverterService {
       const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
 
-      console.log(`PDF cargado, ${pdf.numPages} páginas`);
+      LoggerService.debug('PngConvert', `PDF cargado, ${pdf.numPages} páginas`);
 
       const zip = new JSZip();
       const folder = zip.folder('pdf_pages');
@@ -62,21 +63,21 @@ export class PdfToImageConverterService {
           progressCallback(progress);
         }
         
-        console.log(`Páginas ${i}-${endIndex}/${pdf.numPages} convertidas`);
+        LoggerService.debug('PngConvert', `páginas ${i}-${endIndex}/${pdf.numPages} convertidas`);
         
         await new Promise(resolve => setTimeout(resolve, 10));
       }
 
-      console.log('Generando archivo ZIP...');
+      LoggerService.debug('PngZip', 'generando ZIP ...');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       
       const zipFileName = file.name.replace('.pdf', '') + '_pages.zip';
       saveAs(zipBlob, zipFileName);
       
-      console.log('ZIP generado y descargado exitosamente');
+      LoggerService.info('PngZip', 'ZIP generado y descargado');
       
     } catch (error) {
-      console.error('Error en PdfToImageConverterService.convertPdfToPngZip:', error);
+      LoggerService.error('PngZip', 'convertPdfToPngZip falló:', error);
       throw new Error(`Error al convertir PDF a PNG: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -123,7 +124,7 @@ export class PdfToImageConverterService {
       }
       
     } catch (error) {
-      console.error(`Error convirtiendo página ${pageNumber}:`, error);
+      LoggerService.error('PngConvert', `convertPageToPng p${pageNumber} falló:`, error);
       throw error;
     }
   }
@@ -137,7 +138,7 @@ export class PdfToImageConverterService {
         throw new Error(`El archivo es demasiado grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo permitido: 50MB`);
       }
 
-      console.log(`Iniciando conversión de PDF a array de PNG: ${file.name}`);
+      LoggerService.info('PngArray', `conversión PDF a PNG array: ${file.name}`);
 
       const pdfjs = await this.getPdfjs();
       if (!pdfjs) {
@@ -148,7 +149,7 @@ export class PdfToImageConverterService {
       const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
       const pdf = await loadingTask.promise;
 
-      console.log(`PDF cargado, ${pdf.numPages} páginas`);
+      LoggerService.debug('PngConvert', `PDF cargado, ${pdf.numPages} páginas`);
 
       const pngBlobs: Blob[] = [];
       const batchSize = 5;
@@ -166,16 +167,16 @@ export class PdfToImageConverterService {
         const batchResults = await Promise.all(batchPromises);
         pngBlobs.push(...batchResults);
         
-        console.log(`Páginas ${i}-${endIndex}/${pdf.numPages} convertidas`);
+        LoggerService.debug('PngConvert', `páginas ${i}-${endIndex}/${pdf.numPages} convertidas`);
         
         await new Promise(resolve => setTimeout(resolve, 10));
       }
 
-      console.log(`Conversión completada: ${pngBlobs.length} imágenes PNG`);
+      LoggerService.info('PngArray', `completada: ${pngBlobs.length} imágenes PNG`);
       return pngBlobs;
       
     } catch (error) {
-      console.error('Error en PdfToImageConverterService.convertPdfToPngArray:', error);
+      LoggerService.error('PngArray', 'convertPdfToPngArray falló:', error);
       throw new Error(`Error al convertir PDF a PNG: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   }
@@ -220,7 +221,7 @@ export class PdfToImageConverterService {
       return blob;
       
     } catch (error) {
-      console.error(`Error convirtiendo página ${pageNumber} a blob:`, error);
+      LoggerService.error('PngConvert', `convertPageToPngBlob p${pageNumber} falló:`, error);
       throw error;
     }
   }
