@@ -7,13 +7,12 @@ export class PdfProcessorStrategy implements FileProcessorStrategy {
   }
 
   async process(file: File, setOcrProgress?: (progress: number) => void): Promise<ProcessedFile> {
-    // HTML primario - usa extractHtml para preservar estructura (md queda legacy)
-    const html = await PdfTextExtractor.extractHtml(file);
     const plainText = await PdfTextExtractor.extractPlainText(file);
-    // Fallback: si html vacío, usar texto plano envuelto
-    const htmlContent = html && html.length > 50 ? html : `<pre>${plainText.replace(/</g,'&lt;')}</pre>`;
-    const fullHtml = htmlContent.includes('<!DOCTYPE') ? htmlContent : `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
-    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const htmlBody = await PdfTextExtractor.extractHtml(file);
+    const body = htmlBody && htmlBody.length > 50 ? htmlBody : `<pre style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">${plainText.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
+    const { ViewerFormatterService } = await import('../ViewerFormatterService');
+    const styledHtml = ViewerFormatterService.formatComfortableHtml(body, file.name);
+    const blob = new Blob([styledHtml], { type: 'text/html' });
     const htmlFile = new File([blob], `${file.name.replace(/\.pdf$/i,'')}.html`, { type: 'text/html' });
     return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: file.name };
   }

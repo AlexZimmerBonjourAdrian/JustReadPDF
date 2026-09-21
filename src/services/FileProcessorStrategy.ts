@@ -1,7 +1,7 @@
 export interface ProcessedFile {
   file: File;
   text: string;
-  viewer: 'document' | 'html';
+  viewer: 'html';
   originalFileName?: string;
 }
 

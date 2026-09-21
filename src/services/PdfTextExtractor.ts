@@ -1,6 +1,6 @@
 import { convert } from '@pdf2md/core';
 import { OcrService } from './OcrService';
-import { TextFormatterService } from './TextFormatterService';
+import { DocumentStructureService } from './DocumentStructureService';
 
 export class PdfTextExtractor {
   private static MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -110,14 +110,12 @@ export class PdfTextExtractor {
       
       if (fullText.trim().length === 0) {
         console.warn('Texto vacío detectado, PDF probablemente escaneado. Iniciando OCR...');
-        const ocrText = await OcrService.extractTextFromPDF(file, progressCallback);
-        return TextFormatterService.formatTextToMarkdown(ocrText);
+        return await OcrService.extractTextFromPDF(file, progressCallback);
       }
       
-      console.log(`Texto extraído con react-pdf: ${fullText.length} caracteres`);
-      
-      // Aplicar formato básico al texto extraído
-      return TextFormatterService.formatTextToMarkdown(fullText);
+      console.log(`Texto extraído con react-pdf (structure-aware): ${fullText.length} caracteres`);
+      // Ya viene con # ## ### por detector, no re-aplicar formatTextToMarkdown que duplicaría headings
+      return fullText.replace(/\n{3,}/g, '\n\n').trim();
       
     } catch (error) {
       console.error('Error en extractWithReactPdf:', error);
@@ -126,26 +124,42 @@ export class PdfTextExtractor {
   }
 
   /**
-   * Extrae texto de una página específica
-   * @param pdf Documento PDF cargado
-   * @param pageNumber Número de página
-   * @returns Texto de la página
+   * Extrae texto de una página específica con detección de headings por fontSize/posición
    */
   private static async extractPageText(pdf: any, pageNumber: number): Promise<string> {
     try {
       const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
-      
-      const pageText = textContent.items
-        .map((item: any) => item.str)
-        .filter((str: string) => str.trim().length > 0) // Filtrar strings vacíos
-        .join(' ');
-      
-      if (pageText.trim().length === 0) {
+      const viewport = page.getViewport({ scale: 1 });
+      const pageWidth = viewport.width;
+      const items = textContent.items.filter((i: any) => i.str && i.str.trim());
+
+      if (items.length === 0) {
         console.warn(`Página ${pageNumber} no tiene texto extraíble`);
+        return '';
       }
-      
-      return pageText;
+
+      // Estructura-aware: agrupar por línea y clasificar heading
+      const fontSizes = items.map((i: any) => Math.abs(i.transform[0]) || i.height || 10);
+      const bodySize = DocumentStructureService.detectBodyFontSize(fontSizes);
+      const lines = DocumentStructureService.groupItemsByLine(items, pageWidth);
+
+      const mdLines: string[] = [];
+      for (const line of lines) {
+        // Filtrar índice con puntos suspensivos ......... (TOC) -> preservar pero como texto normal con saltos
+        if (line.text.includes('..') && line.text.length > 40) {
+          mdLines.push(line.text);
+          continue;
+        }
+        const level = DocumentStructureService.classifyHeadingLevel(line, bodySize);
+        if (level === 1) mdLines.push(`# ${line.text}`);
+        else if (level === 2) mdLines.push(`## ${line.text}`);
+        else if (level === 3) mdLines.push(`### ${line.text}`);
+        else mdLines.push(line.text);
+      }
+
+      // Unir con saltos: headings separados por doble salto, texto continuo por espacio
+      return mdLines.join('\n\n');
     } catch (error) {
       console.error(`Error extrayendo página ${pageNumber}:`, error);
       return '';
@@ -159,34 +173,41 @@ export class PdfTextExtractor {
    */
   static async extractHtml(file: File): Promise<string> {
     const markdown = await this.extractText(file);
-    
-    // Convertir markdown a HTML básico manteniendo estructura
-    let html = markdown
-      // Headers
-      .replace(/^######\s+(.*)$/gm, '<h6>$1</h6>')
-      .replace(/^#####\s+(.*)$/gm, '<h5>$1</h5>')
-      .replace(/^####\s+(.*)$/gm, '<h4>$1</h4>')
-      .replace(/^###\s+(.*)$/gm, '<h3>$1</h3>')
-      .replace(/^##\s+(.*)$/gm, '<h2>$1</h2>')
-      .replace(/^#\s+(.*)$/gm, '<h1>$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      // Code inline
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      // Links
-      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-      // Images (removerlas pero mantener referencia)
-      .replace(/!\[(.*?)\]\((.*?)\)/g, '[Imagen: $1]')
-      // Line breaks
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    
-    // Envolver en párrafos
-    html = `<div class="pdf-content"><p>${html}</p></div>`;
-    
-    return html;
+
+    const blocks = markdown.split(/\n\n+/).map(block => {
+      const b = block.trim();
+      if (!b) return '';
+      // Headings directos (ya detectados por DocumentStructureService)
+      if (/^#{1,6}\s/.test(b)) {
+        return b
+          .replace(/^######\s+(.*)$/s, '<h6>$1</h6>')
+          .replace(/^#####\s+(.*)$/s, '<h5>$1</h5>')
+          .replace(/^####\s+(.*)$/s, '<h4>$1</h4>')
+          .replace(/^###\s+(.*)$/s, '<h3>$1</h3>')
+          .replace(/^##\s+(.*)$/s, '<h2>$1</h2>')
+          .replace(/^#\s+(.*)$/s, '<h1>$1</h1>');
+      }
+      // TOC con leader dots ........ -> estructura legible
+      if (/\.{4,}/.test(b) && b.length > 30) {
+        const parts = b.split(/\.{4,}/);
+        if (parts.length >= 2) {
+          const title = parts[0].trim().replace(/</g,'&lt;');
+          const page = parts[parts.length-1].trim().replace(/</g,'&lt;');
+          return `<div class="toc-entry"><span class="toc-title">${title}</span><span class="toc-dots"></span><span class="toc-page">${page}</span></div>`;
+        }
+      }
+      let inline = b
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+        .replace(/!\[(.*?)\]\(.*?\)/g, '<figure><div class="img-placeholder">[Figura: $1]</div><figcaption>$1</figcaption></figure>')
+        .replace(/\n/g, '<br>');
+      if (/^<figure/.test(inline)) return inline;
+      return `<p>${inline}</p>`;
+    }).filter(Boolean);
+
+    return `<div class="pdf-content">\n${blocks.join('\n')}\n</div>`;
   }
 
   /**

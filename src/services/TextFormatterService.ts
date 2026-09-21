@@ -45,52 +45,6 @@ export class TextFormatterService {
   }
 
   /**
-   * Formatea texto plano a markdown básico
-   * @param text Texto plano a formatear
-   * @returns Texto formateado en markdown
-   */
-  static formatTextToMarkdown(text: string): string {
-    const lines = text.split('\n');
-    const formattedLines: string[] = [];
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Detectar líneas que podrían ser títulos (cortas, solas, sin punto al final)
-      if (trimmedLine.length > 0 && 
-          trimmedLine.length < 80 && 
-          !trimmedLine.endsWith('.') &&
-          !trimmedLine.endsWith(',') &&
-          !trimmedLine.endsWith(';') &&
-          !trimmedLine.endsWith(':') &&
-          /^[A-ZÁÉÍÓÚÑ]/.test(trimmedLine)) {
-        // Es probable que sea un título
-        formattedLines.push(`## ${trimmedLine}`);
-      } 
-      // Detectar headers específicos de capítulos/palabras clave
-      else if (trimmedLine.length > 0 && trimmedLine.length < 100 && 
-          (trimmedLine === trimmedLine.toUpperCase() || 
-           /^(CHAPTER|SECTION|PART|INTRODUCTION|CONCLUSION|REFERENCES|ABSTRACT|TABLE|FIGURE)/i.test(trimmedLine))) {
-        formattedLines.push(`## ${trimmedLine}`);
-      }
-      // Detectar listas (líneas que comienzan con -, *, números)
-      else if (/^[\-\*\•]\s/.test(trimmedLine) || /^\d+[\.\)]\s/.test(trimmedLine)) {
-        formattedLines.push(trimmedLine);
-      }
-      // Detectar párrafos vacíos
-      else if (trimmedLine === '') {
-        formattedLines.push('');
-      }
-      // Texto normal - mantener como párrafo
-      else if (trimmedLine.length > 0) {
-        formattedLines.push(trimmedLine);
-      }
-    }
-    
-    return formattedLines.join('\n\n');
-  }
-
-  /**
    * Aplica template HTML para visualización
    * @param content Contenido del documento
    * @param fileName Nombre del archivo
@@ -109,109 +63,173 @@ export class TextFormatterService {
     * {
       box-sizing: border-box;
     }
+    :root { color-scheme: dark; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.8;
-      color: #e5e7eb;
+      font-family: 'Georgia', 'Merriweather', 'Times New Roman', serif;
+      font-size: clamp(16px, 0.55vw + 13.5px, 19px);
+      line-height: 1.6;
+      color: #e5e5e5;
       margin: 0;
-      padding: 20px 30px;
-      background: #1f2937;
+      padding: clamp(24px, 4vw, 48px) clamp(20px, 4vw, 48px);
+      background: #1a1a1a;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      font-feature-settings: "onum" 1, "liga" 1, "kern" 1;
     }
     .content {
-      max-width: 900px;
+      max-width: 66ch;
       margin: 0 auto;
     }
+    ::selection { background: #C0392B; color: #fff; }
+    h1, h2, h3, h4, p, li { scroll-margin-top: 24px; }
     h1, h2, h3, h4, h5, h6 {
-      color: #f9fafb;
-      margin-top: 1.5em;
-      margin-bottom: 0.5em;
-      font-weight: 600;
+      color: #f5f5f5;
+      margin-top: 1.8em;
+      margin-bottom: 0.6em;
+      font-weight: 700;
+      line-height: 1.25;
+      font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    }
+    h1, h2, h3 {
+      text-wrap: balance;
+    }
+    h6 {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
     h1 { 
-      font-size: 2em; 
-      border-bottom: 2px solid #4b5563; 
-      padding-bottom: 0.3em; 
+      font-size: 1.95em; 
+      border-bottom: 2px solid #2A2E33; 
+      padding-bottom: 0.35em; 
       margin-top: 0;
+      letter-spacing: -0.02em;
     }
     h2 { 
-      font-size: 1.5em; 
-      border-bottom: 1px solid #4b5563; 
-      padding-bottom: 0.2em; 
+      font-size: 1.35em; 
+      border-bottom: 1px solid #2A2E33; 
+      padding-bottom: 0.25em; 
     }
-    h3 { font-size: 1.25em; }
+    h3 { font-size: 1.15em; }
     h4 { font-size: 1em; }
     p { 
-      margin-bottom: 1.2em; 
-      line-height: 1.8;
-      max-width: 85ch;
+      margin: 0 0 0.85em 0;
+      line-height: 1.6;
+      text-align: start;
+      text-wrap: pretty;
+      hyphens: auto;
+      hanging-punctuation: first;
+      color: #e5e5e5;
+      orphans: 3;
+      widows: 3;
     }
+    p + p { text-indent: 1.5em; margin-top: -0.4em; }
+    h1 + p, h2 + p, h3 + p { text-indent: 0; margin-top: 0; }
+    h1 + p::first-letter {
+      initial-letter: 2;
+      font-weight: 700;
+      color: #f5f5f5;
+      padding-right: 6px;
+    }
+    .toc-entry {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin: 0.3em 0;
+    }
+    .toc-entry .toc-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toc-entry .toc-dots { flex: 1 1 auto; border-bottom: 1px dotted #4b5563; transform: translateY(-4px); min-width: 24px; }
+    .toc-entry .toc-page { flex: 0 0 auto; font-variant-numeric: tabular-nums; color: #9CA3AF; letter-spacing: 0.04em; }
+    figcaption { letter-spacing: 0.04em; }
     code {
-      background: #374151;
+      background: #25282B;
       padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Courier New', monospace;
-      color: #e5e7eb;
-      font-size: 0.9em;
+      border-radius: 4px;
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+      color: #e5e5e5;
+      font-size: 0.85em;
+      border: 1px solid #2A2E33;
     }
     pre {
-      background: #374151;
-      padding: 16px;
-      border-radius: 5px;
+      background: #25282B;
+      padding: 16px 20px;
+      border-radius: 8px;
       overflow-x: auto;
-      border: 1px solid #4b5563;
-      margin: 1em 0;
+      border: 1px solid #2A2E33;
+      margin: 1.4em 0;
+      line-height: 1.6;
     }
     pre code {
       background: none;
       padding: 0;
     }
     blockquote {
-      border-left: 4px solid #6b7280;
-      padding-left: 16px;
-      margin: 1em 0;
-      color: #9ca3af;
+      border-left: 3px solid #C0392B;
+      padding-left: 18px;
+      margin: 1.4em 0;
+      color: #9CA3AF;
       font-style: italic;
+      background: #1F2225;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      border-radius: 0 8px 8px 0;
+    }
+    figure { margin: 1.6em 0; }
+    figcaption { font-size: 0.82em; color: #9CA3AF; font-family: 'Inter', sans-serif; margin-top: 8px; }
+    .img-placeholder {
+      border: 1px dashed #4b5563;
+      border-radius: 8px;
+      padding: 14px;
+      color: #9CA3AF;
+      font-size: 0.85em;
+      background: #1F2225;
     }
     table {
       border-collapse: collapse;
       width: 100%;
-      margin: 1em 0;
+      margin: 1.4em 0;
+      font-size: 0.9em;
+      font-family: 'Inter', sans-serif;
+      display: block;
+      overflow-x: auto;
     }
     th, td {
-      border: 1px solid #4b5563;
-      padding: 12px;
+      border: 1px solid #2A2E33;
+      padding: 10px 12px;
       text-align: left;
     }
     th {
-      background: #374151;
+      background: #25282B;
       font-weight: 600;
-      color: #f9fafb;
+      color: #f5f5f5;
     }
     td {
-      background: #1f2937;
+      background: #1a1a1a;
     }
     ul, ol { 
       margin: 1em 0; 
-      padding-left: 2em; 
+      padding-left: 1.6em; 
     }
     li { 
-      margin: 0.5em 0; 
-      line-height: 1.6;
+      margin: 0.45em 0; 
+      line-height: 1.65;
+      padding-left: 0.2em;
     }
+    li::marker { color: #C0392B; }
     a { 
-      color: #60a5fa; 
-      text-decoration: none; 
+      color: #C0392B; 
+      text-decoration: underline;
+      text-underline-offset: 3px;
     }
     a:hover { 
-      text-decoration: underline; 
+      color: #922B21; 
     }
     strong, b { 
-      color: #f9fafb; 
-      font-weight: 600;
+      color: #f5f5f5; 
+      font-weight: 700;
     }
     em, i { 
-      color: #e5e7eb; 
+      color: #e5e5e5; 
     }
     hr {
       border: none;

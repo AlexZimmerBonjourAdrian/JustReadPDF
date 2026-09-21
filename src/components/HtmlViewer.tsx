@@ -1,73 +1,29 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import SearchBar from './SearchBar';
+import { ViewerInteractionService } from '@/services/ViewerInteractionService';
+import { ViewerDisplayData } from '@/types/ViewerData';
+import ViewerToolbar from './ViewerToolbar';
 
 interface HtmlViewerProps {
-  htmlFile: File;
-  extractedText?: string;
-  originalFileName?: string;
+  displayData: ViewerDisplayData;
+  toolbarActions?: React.ReactNode;
 }
 
-export default function HtmlViewer({ htmlFile, extractedText, originalFileName }: HtmlViewerProps) {
+export default function HtmlViewer({ displayData, toolbarActions }: HtmlViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [htmlContent, setHtmlContent] = useState<string>('');
+  const { fileData, content } = displayData;
 
   const handleResultClick = (lineNumber: number) => {
-    console.log('Navigating to line:', lineNumber);
-    
-    if (!iframeRef.current) return;
-    
-    const iframe = iframeRef.current;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    
-    // Split extracted text into lines and find the text at the given line number
-    const lines = extractedText?.split('\n') || [];
-    const targetText = lines[lineNumber];
-    
-    if (!targetText) {
-      console.log('Line not found:', lineNumber);
-      return;
-    }
-    
-    // Search for the text in the iframe document
-    const textNodes: Text[] = [];
-    const walker = doc.createTreeWalker(
-      doc.body,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
-    
-    let node: Node | null;
-    while (node = walker.nextNode()) {
-      if (node.textContent && node.textContent.includes(targetText)) {
-        textNodes.push(node as Text);
-      }
-    }
-    
-    if (textNodes.length > 0) {
-      // Scroll to the first matching element
-      const element = textNodes[0].parentElement;
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Highlight the element temporarily
-        const originalBg = element.style.backgroundColor;
-        element.style.backgroundColor = '#4b5563';
-        setTimeout(() => {
-          element.style.backgroundColor = originalBg;
-        }, 2000);
-      }
-    }
+    ViewerInteractionService.scrollToLineInIframe(iframeRef.current, content.plainText, lineNumber);
   };
 
   useEffect(() => {
-    const loadHtml = async () => {
-      const text = await htmlFile.text();
-      setHtmlContent(text);
-    };
-    loadHtml();
-  }, [htmlFile]);
+    let cancelled = false;
+    ViewerInteractionService.loadHtmlFileContent(fileData.file).then(t => { if (!cancelled) setHtmlContent(t); });
+    return () => { cancelled = true; };
+  }, [fileData.file]);
 
   useEffect(() => {
     if (iframeRef.current && htmlContent) {
@@ -82,29 +38,13 @@ export default function HtmlViewer({ htmlFile, extractedText, originalFileName }
   }, [htmlContent]);
 
   return (
-    <div id="html-viewer" className="flex-1 bg-[#FAFAF8] overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between px-4 h-[40px] bg-white border-b border-[#E6E2DB] shrink-0">
-        <span className="text-[11px] font-mono tracking-wide text-[#6B6560] truncate max-w-[40ch]">{originalFileName || htmlFile.name}</span>
-        {extractedText && <SearchBar text={extractedText} onResultClick={handleResultClick} />}
-      </div>
-      <style jsx global>{`
-        #html-viewer {
-          background-color: #1f2937 !important;
-          color: #e5e7eb !important;
-        }
-        #html-viewer * {
-          background-color: #1f2937 !important;
-          color: #e5e7eb !important;
-        }
-        #html-viewer iframe {
-          background-color: #1f2937 !important;
-        }
-      `}</style>
+    <div id="html-viewer" className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">
+      <ViewerToolbar fileName={fileData.originalFileName || fileData.fileName} plainText={content.plainText} onSearchNavigate={handleResultClick} actions={toolbarActions} />
       <iframe
         ref={iframeRef}
-        title={htmlFile.name}
-        className="flex-1 border-0"
-        style={{ height: '100%' }}
+        title={fileData.fileName}
+        className="flex-1 min-h-0 w-full border-0 block bg-[#1a1a1a]"
+        style={{ minHeight: '65vh' }}
         sandbox="allow-same-origin allow-scripts"
       />
     </div>

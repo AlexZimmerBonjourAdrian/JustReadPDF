@@ -7,37 +7,23 @@ import { FileProcessorFactory } from '@/services/FileProcessorFactory';
 import { ProcessedFile } from '@/services/FileProcessorStrategy';
 import { ViewerFactory } from '@/components/ViewerFactory';
 import { ViewerProps } from '@/components/strategies/ViewerStrategy';
-import ToolsPanel from '@/components/ToolsPanel';
+import dynamic from 'next/dynamic';
 
+const FaithfulViewer = dynamic(() => import('@/components/FaithfulViewer'), { ssr: false });
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [viewerFile, setViewerFile] = useState<File | null>(null);
-  const [viewerType, setViewerType] = useState<'document' | 'html' | null>(null);
+  const [viewerType, setViewerType] = useState<'html' | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
-  const [isConvertingToPng, setIsConvertingToPng] = useState(false);
-  const [pngConversionProgress, setPngConversionProgress] = useState<number>(0);
-  const [isToolsPanelOpen, setIsToolsPanelOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'comfortable' | 'faithful'>('comfortable');
 
   useEffect(() => {
     loadStoredDocument();
   }, []);
-
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Secret key combination: Ctrl + Shift + P
-      if (e.ctrlKey && e.shiftKey && e.key === 'P') {
-        e.preventDefault();
-        setIsToolsPanelOpen(!isToolsPanelOpen);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isToolsPanelOpen]);
 
   const loadStoredDocument = async () => {
     try {
@@ -126,70 +112,62 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF8] flex flex-col relative">
-      {/* Barra superior editorial cuando hay viewer */}
-      <AnimatePresence>
-        {(viewerFile) && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.25 }}
-            className="sticky top-[68px] z-40 bg-[#FAFAF8]/95 backdrop-blur-[6px] border-b border-[#E6E2DB]"
-          >
-            <div className="max-w-7xl mx-auto px-6 lg:px-8 h-[44px] flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="hidden sm:inline text-[10px] tracking-[0.12em] uppercase text-[#9A9590]">Documento</span>
-                <span className="text-[12px] font-mono text-[#6B6560] truncate max-w-[28ch]">{viewerFile.name}</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <label className="px-3 py-[7px] bg-[#111214] text-white rounded-[8px] hover:bg-black transition-colors cursor-pointer text-[12px] tracking-wide font-medium">
-                  <span>Cargar otro</span>
-                  <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub" onChange={handleFileUpload} className="hidden" />
-                </label>
-                <ToolsPanel pdfFile={pdfFile} extractedText={extractedText} onPngConversionStart={() => setIsConvertingToPng(true)} onPngConversionEnd={() => { setIsConvertingToPng(false); setPngConversionProgress(0); }} />
-                <button onClick={handleClearStorage} className="px-3 py-[7px] bg-white border border-[#E6E2DB] text-[#6B6560] rounded-[8px] hover:border-[#111214] hover:text-[#111214] transition-colors text-[12px]" title="Limpiar">Limpiar</button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-[#0f0f0f] flex flex-col relative">
 
       {/* DocumentView - Prioridad máxima */}
-      <div className="flex-1 flex flex-col bg-[#FAFAF8]">
+      <div className="flex-1 flex flex-col bg-[#0f0f0f]">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center py-24">
-            <p className="text-[13px] tracking-[0.08em] uppercase text-[#9A9590]">Cargando documento…</p>
+            <p className="text-[13px] tracking-[0.08em] uppercase text-[#6B7280]">Cargando documento…</p>
           </div>
         ) : isExtracting ? (
           <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4">
-            <p className="text-[14px] text-[#111214] font-medium">
+            <p className="text-[14px] text-[#e5e5e5] font-medium">
               {ocrProgress > 0 ? `Procesando con OCR — ${ocrProgress.toFixed(0)}%` : 'Extrayendo texto…'}
             </p>
             {ocrProgress > 0 && (
-              <div className="w-[320px] h-[3px] bg-[#E6E2DB] rounded-full overflow-hidden">
+              <div className="w-[320px] h-[3px] bg-[#25282B] rounded-full overflow-hidden">
                 <div className="h-full bg-[#C0392B] transition-all duration-300" style={{ width: `${ocrProgress}%` }} />
               </div>
             )}
-          </div>
-        ) : isConvertingToPng ? (
-          <div className="flex-1 flex flex-col items-center justify-center py-24 gap-4">
-            <p className="text-[14px] text-[#111214] font-medium">Convirtiendo a PNG — {pngConversionProgress.toFixed(0)}%</p>
-            <div className="w-[320px] h-[3px] bg-[#E6E2DB] rounded-full overflow-hidden">
-              <div className="h-full bg-[#111214] transition-all duration-300" style={{ width: `${pngConversionProgress}%` }} />
-            </div>
           </div>
         ) : (
           <AnimatePresence mode="wait">
             {viewerFile && viewerType ? (() => {
               const strategy = ViewerFactory.getStrategy(viewerType);
               if (!strategy) return null;
-              
-              const viewerProps: ViewerProps = {
-                file: viewerFile,
-                extractedText,
-                originalFileName
-              };
+              const displayData = {
+                fileData: { file: viewerFile, fileName: viewerFile.name, mimeType: viewerFile.type, originalFileName },
+                content: { plainText: extractedText, html: extractedText }
+              } as const;
+              const toolbarActions = (
+                <>
+                  <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33] shrink-0">
+                    <button onClick={() => setViewMode('comfortable')} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
+                    <button onClick={() => setViewMode('faithful')} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
+                  </div>
+                  <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
+                    <span>Cargar otro</span>
+                    <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                  <button onClick={handleClearStorage} className="px-3 py-[6px] bg-[#25282B] border border-[#2A2E33] text-[#9CA3AF] rounded-[8px] hover:border-[#3A3E44] hover:text-white transition-colors text-[12px] shrink-0">Limpiar</button>
+                </>
+              );
+              if (viewMode === 'faithful' && pdfFile) {
+                return (
+                  <motion.div
+                    key="faithful-viewer"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="flex-1 min-h-0 flex flex-col"
+                  >
+                    <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} />
+                  </motion.div>
+                );
+              }
+              const viewerProps = { displayData, toolbarActions } as ViewerProps;
               
               return (
                 <motion.div
@@ -198,7 +176,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="flex-1"
+                  className="flex-1 min-h-0 flex flex-col"
                 >
                   {strategy.render(viewerProps)}
                 </motion.div>
@@ -215,29 +193,29 @@ export default function Home() {
                 <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                   <div className="lg:col-span-7">
                     <p className="text-[11px] tracking-[0.14em] uppercase text-[#C0392B] font-semibold mb-3">Lector privado · 100% local</p>
-                    <h1 className="font-serif text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[0.95] text-[#111214] mb-4">Lee documentos<br />largos sin perder<br /><span className="font-normal italic">el formato.</span></h1>
-                    <p className="text-[15px] leading-[1.7] text-[#6B6560] max-w-[48ch] mb-8">Sube PDF, DOCX, EPUB, TXT, RTF o DOC. Extraemos el texto con estructura preservada, listo para copiar, buscar y traducir con Google Translate.</p>
+                    <h1 className="font-serif text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[0.95] text-white mb-4">Lee documentos<br />largos sin perder<br /><span className="font-normal italic text-[#9CA3AF]">el formato.</span></h1>
+                    <p className="text-[15px] leading-[1.7] text-[#9CA3AF] max-w-[48ch] mb-8">Sube PDF, DOCX, EPUB, TXT, RTF o DOC. Extraemos el texto con estructura preservada, listo para copiar, buscar y traducir con Google Translate.</p>
                     <div className="flex flex-wrap gap-3 text-[12px] leading-none">
-                      <span className="px-3 py-2 rounded-full bg-white border border-[#E6E2DB] text-[#6B6560]">→ Formato preservado</span>
-                      <span className="px-3 py-2 rounded-full bg-white border border-[#E6E2DB] text-[#6B6560]">→ Sin subidas</span>
-                      <span className="px-3 py-2 rounded-full bg-white border border-[#E6E2DB] text-[#6B6560]">→ Búsqueda integrada</span>
+                      <span className="px-3 py-2 rounded-full bg-[#1a1a1a] border border-[#2A2E33] text-[#9CA3AF]">→ Formato preservado</span>
+                      <span className="px-3 py-2 rounded-full bg-[#1a1a1a] border border-[#2A2E33] text-[#9CA3AF]">→ Sin subidas</span>
+                      <span className="px-3 py-2 rounded-full bg-[#1a1a1a] border border-[#2A2E33] text-[#9CA3AF]">→ Búsqueda integrada</span>
                     </div>
                   </div>
                   <div className="lg:col-span-5">
-                    <div className="bg-white border border-[#E6E2DB] rounded-[14px] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+                    <div className="bg-[#1a1a1a] border border-[#2A2E33] rounded-[14px] p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[11px] tracking-[0.12em] uppercase font-semibold text-[#111214]">Cargar documento</h3>
-                        <span className="text-[11px] text-[#9A9590]">PDF · DOCX · EPUB · TXT · RTF · DOC</span>
+                        <h3 className="text-[11px] tracking-[0.12em] uppercase font-semibold text-white">Cargar documento</h3>
+                        <span className="text-[11px] text-[#6B7280]">PDF · DOCX · EPUB · TXT · RTF · DOC</span>
                       </div>
-                      <label className="group block rounded-[12px] border border-dashed border-[#C9C5BF] hover:border-[#111214] bg-[#FAFAF8] hover:bg-white transition-colors cursor-pointer p-8 text-center">
-                        <div className="mx-auto w-9 h-9 rounded-full bg-[#111214] text-white flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      <label className="group block rounded-[12px] border border-dashed border-[#3A3E44] hover:border-[#6B7280] bg-[#0f0f0f] hover:bg-[#1a1a1a] transition-colors cursor-pointer p-8 text-center">
+                        <div className="mx-auto w-9 h-9 rounded-full bg-white text-[#0f0f0f] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
                         </div>
-                        <span className="block text-[14px] font-medium text-[#111214]">Arrastra o haz clic para cargar</span>
-                        <span className="block text-[12px] text-[#9A9590] mt-1">Máx 50MB · Procesado en tu navegador</span>
+                        <span className="block text-[14px] font-medium text-white">Arrastra o haz clic para cargar</span>
+                        <span className="block text-[12px] text-[#6B7280] mt-1">Máx 50MB · Procesado en tu navegador</span>
                         <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub" onChange={handleFileUpload} className="hidden" />
                       </label>
-                      <p className="text-[11px] leading-[1.6] text-[#9A9590] mt-4">El texto se muestra con títulos, listas y párrafos. Ideal para traducir sin perder estructura.</p>
+                      <p className="text-[11px] leading-[1.6] text-[#6B7280] mt-4">El texto se muestra con títulos, listas y párrafos. Ideal para traducir sin perder estructura.</p>
                     </div>
                   </div>
                 </div>

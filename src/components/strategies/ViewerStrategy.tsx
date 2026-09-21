@@ -1,12 +1,12 @@
 import { ReactElement } from 'react';
+import { ViewerDisplayData } from '@/types/ViewerData';
 
 export interface ViewerProps {
-  file: File;
-  extractedText?: string;
-  originalFileName?: string;
+  displayData: ViewerDisplayData;
+  toolbarActions?: React.ReactNode;
 }
 
 export interface ViewerStrategy {
-  canRender(viewerType: 'document' | 'html'): boolean;
+  canRender(viewerType: 'html'): boolean;
   render(props: ViewerProps): ReactElement;
 }

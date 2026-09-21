@@ -19,6 +19,8 @@
         "@omer-go/docx-parser-converter-ts": "^1.0.0",
         "@pdf2md/core": "^0.3.0",
         "@shahajimbhosle/local-doc-viewer": "^1.0.8",
+        "docx-preview": "^0.4.1",
+        "epubjs": "^0.3.93",
         "file-saver": "^2.0.5",
         "framer-motion": "^12.6.3",
         "geist": "^1.3.1",

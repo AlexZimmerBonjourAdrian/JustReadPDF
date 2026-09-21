@@ -1,26 +1,12 @@
 import { parseMsDocToHtml } from '@file-viewer/doc';
-import { TextFormatterService } from './TextFormatterService';
+import { ViewerFormatterService } from './ViewerFormatterService';
 
 export class DocLegacyViewerService {
-  // LEGACY MD - desconectado
-  static async readDocFile(file: File): Promise<File> {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const rendered = await parseMsDocToHtml(arrayBuffer);
-      const plainText = this.extractTextFromHtml(rendered.html);
-      const formattedText = TextFormatterService.formatTextToMarkdown(plainText);
-      const textBlob = new Blob([formattedText], { type: 'text/markdown' });
-      return new File([textBlob], `${file.name.replace('.doc', '')}.md`, { type: 'text/markdown' });
-    } catch (error) {
-      throw new Error(`Error al leer el archivo DOC: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    }
-  }
-
   static async readDocFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
     const arrayBuffer = await file.arrayBuffer();
     const rendered = await parseMsDocToHtml(arrayBuffer);
     const plainText = this.extractTextFromHtml(rendered.html);
-    const html = TextFormatterService.applyFormattingTemplate(rendered.html, file.name);
+    const html = ViewerFormatterService.formatComfortableHtml(rendered.html, file.name);
     const blob = new Blob([html], { type: 'text/html' });
     const htmlFile = new File([blob], `${file.name.replace(/\.doc$/i,'')}.html`, { type: 'text/html' });
     return { htmlFile, plainText };

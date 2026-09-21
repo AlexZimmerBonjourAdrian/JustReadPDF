@@ -1,33 +1,7 @@
 import JSZip from 'jszip';
-import { TextFormatterService } from './TextFormatterService';
+import { ViewerFormatterService } from './ViewerFormatterService';
 
 export class EpubViewerService {
-  // LEGACY MD - desconectado
-  static async readEpubFile(file: File): Promise<File> {
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const zip = await JSZip.loadAsync(arrayBuffer);
-      const opfFile = this.findOpfFile(zip);
-      if (!opfFile) throw new Error('No se encontró archivo .opf en el EPUB');
-      const opfContent = await opfFile.async('string');
-      const spineItems = this.parseSpine(opfContent);
-      let fullText = '';
-      for (const item of spineItems) {
-        try { const f = zip.file(item); if (f) fullText += this.extractTextFromHtml(await f.async('string')) + '\n\n'; } catch {}
-      }
-      if (!fullText.trim()) {
-        for (const n of Object.keys(zip.files).filter(n=>n.match(/\.(html|xhtml)$/i) && !n.includes('META-INF'))) {
-          try { const f = zip.file(n); if (f) fullText += this.extractTextFromHtml(await f.async('string')) + '\n\n'; } catch {}
-        }
-      }
-      const formattedText = TextFormatterService.formatTextToMarkdown(fullText);
-      return new File([new Blob([formattedText], { type: 'text/markdown' })], `${file.name.replace('.epub', '')}.md`, { type: 'text/markdown' });
-    } catch (error) {
-      throw new Error(`Error al leer el archivo EPUB: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    }
-  }
-
-  // HTML primario - preserva HTML original para Google Translate
   static async readEpubFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
@@ -49,7 +23,7 @@ export class EpubViewerService {
         const f = zip.file(n); if (f) { const c = await f.async('string'); combinedHtml += c + '\n'; fullText += this.extractTextFromHtml(c) + '\n\n'; }
       }
     }
-    const html = TextFormatterService.applyFormattingTemplate(combinedHtml, file.name);
+    const html = ViewerFormatterService.formatComfortableHtml(combinedHtml, file.name);
     const htmlFile = new File([new Blob([html], { type: 'text/html' })], `${file.name.replace(/\.epub$/i,'')}.html`, { type: 'text/html' });
     return { htmlFile, plainText: fullText.trim() };
   }

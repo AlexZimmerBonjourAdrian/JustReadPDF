@@ -1,27 +1,13 @@
 import { docxToHtml } from '@omer-go/docx-parser-converter-ts';
-import { TextFormatterService } from './TextFormatterService';
+import { ViewerFormatterService } from './ViewerFormatterService';
 
 export class DocxViewerService {
-  // LEGACY MD - desconectado
-  static async readDocxFile(file: File): Promise<File> {
-    try {
-      const html = await docxToHtml(file, { title: file.name });
-      const plainText = this.extractTextFromHtml(html);
-      const formattedText = TextFormatterService.formatTextToMarkdown(plainText);
-      const textBlob = new Blob([formattedText], { type: 'text/markdown' });
-      return new File([textBlob], `${file.name.replace('.docx', '')}.md`, { type: 'text/markdown' });
-    } catch (error) {
-      throw new Error(`Error al leer el archivo DOCX: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    }
-  }
-
-  // HTML primario - preserva tablas/estilos para Google Translate
   static async readDocxFileAsHtml(file: File): Promise<{ htmlFile: File; plainText: string }> {
     const rawHtml = await docxToHtml(file, { title: file.name });
     const plainText = this.extractTextFromHtml(rawHtml);
     const bodyMatch = rawHtml.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
     const bodyContent = bodyMatch && bodyMatch[1] ? bodyMatch[1] : rawHtml;
-    const html = TextFormatterService.applyFormattingTemplate(bodyContent, file.name);
+    const html = ViewerFormatterService.formatComfortableHtml(bodyContent, file.name);
     const blob = new Blob([html], { type: 'text/html' });
     const htmlFile = new File([blob], `${file.name.replace(/\.docx$/i,'')}.html`, { type: 'text/html' });
     return { htmlFile, plainText };
