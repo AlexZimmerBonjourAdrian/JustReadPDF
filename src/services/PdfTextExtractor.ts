@@ -180,12 +180,12 @@ export class PdfTextExtractor {
       // Headings directos (ya detectados por DocumentStructureService)
       if (/^#{1,6}\s/.test(b)) {
         return b
-          .replace(/^######\s+(.*)$/s, '<h6>$1</h6>')
-          .replace(/^#####\s+(.*)$/s, '<h5>$1</h5>')
-          .replace(/^####\s+(.*)$/s, '<h4>$1</h4>')
-          .replace(/^###\s+(.*)$/s, '<h3>$1</h3>')
-          .replace(/^##\s+(.*)$/s, '<h2>$1</h2>')
-          .replace(/^#\s+(.*)$/s, '<h1>$1</h1>');
+          .replace(/^######\s+([\s\S]*)$/, '<h6>$1</h6>')
+          .replace(/^#####\s+([\s\S]*)$/, '<h5>$1</h5>')
+          .replace(/^####\s+([\s\S]*)$/, '<h4>$1</h4>')
+          .replace(/^###\s+([\s\S]*)$/, '<h3>$1</h3>')
+          .replace(/^##\s+([\s\S]*)$/, '<h2>$1</h2>')
+          .replace(/^#\s+([\s\S]*)$/, '<h1>$1</h1>');
       }
       // TOC con leader dots ........ -> estructura legible
       if (/\.{4,}/.test(b) && b.length > 30) {
