@@ -59,8 +59,9 @@ export class DocxViewerService {
   }
 
   static isValidDocxFile(file: File): boolean {
-    // Solo aceptar archivos DOCX reales (son archivos ZIP)
-    return file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
-           file.name.endsWith('.docx');
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+           name.endsWith('.docx');
   }
 }

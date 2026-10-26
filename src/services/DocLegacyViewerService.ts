@@ -56,9 +56,9 @@ export class DocLegacyViewerService {
   }
 
   static isValidDocFile(file: File): boolean {
-    // Validar archivos .doc legacy (Word 97-2003)
-    // NOTA: .docx ya está manejado por DocxViewerService
-    return file.type === 'application/msword' || 
-           (file.name.endsWith('.doc') && !file.name.endsWith('.docx'));
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return type === 'application/msword' ||
+           (name.endsWith('.doc') && !name.endsWith('.docx'));
   }
 }

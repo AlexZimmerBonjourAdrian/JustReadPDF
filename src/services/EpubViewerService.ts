@@ -147,8 +147,10 @@ export class EpubViewerService {
   }
 
   static isValidEpubFile(file: File): boolean {
-    return file.type === 'application/epub+zip' ||
-           file.type === 'application/octet-stream' ||
-           file.name.endsWith('.epub');
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return type === 'application/epub+zip' ||
+           type === 'application/octet-stream' ||
+           name.endsWith('.epub');
   }
 }

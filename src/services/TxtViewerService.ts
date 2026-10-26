@@ -18,6 +18,8 @@ export class TxtViewerService {
   }
 
   static isValidTxtFile(file: File): boolean {
-    return file.type === 'text/plain' || file.name.endsWith('.txt');
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return type === 'text/plain' || name.endsWith('.txt');
   }
 }

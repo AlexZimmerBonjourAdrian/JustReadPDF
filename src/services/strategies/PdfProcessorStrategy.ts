@@ -4,7 +4,9 @@ import { LoggerService } from '../LoggerService';
 
 export class PdfProcessorStrategy implements FileProcessorStrategy {
   canProcess(file: File): boolean {
-    return file.type === 'application/pdf' || file.name.endsWith('.pdf');
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return type === 'application/pdf' || name.endsWith('.pdf');
   }
 
   async process(file: File, setOcrProgress?: (progress: number) => void): Promise<ProcessedFile> {

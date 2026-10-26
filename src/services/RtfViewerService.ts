@@ -48,6 +48,13 @@ export class RtfViewerService {
   }
 
   static isValidRtfFile(file: File): boolean {
-    return file.type === 'application/rtf' || file.name.endsWith('.rtf');
+    const name = file.name.toLowerCase();
+    const type = (file.type || '').toLowerCase();
+    return (
+      type === 'application/rtf' ||
+      type === 'text/rtf' ||
+      type === 'application/x-rtf' ||
+      name.endsWith('.rtf')
+    );
   }
 }
