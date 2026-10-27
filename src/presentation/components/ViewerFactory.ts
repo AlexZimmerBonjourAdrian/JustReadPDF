@@ -1,6 +1,6 @@
 import { ViewerStrategy } from './strategies/ViewerStrategy';
 import { HtmlViewerStrategy } from './strategies/HtmlViewerStrategy';
-import { ViewerType } from '@/types/ViewerData';
+import { ViewerType } from '@/data/ViewerData';
 
 export class ViewerFactory {
   private static strategies: ViewerStrategy[] = [new HtmlViewerStrategy()];

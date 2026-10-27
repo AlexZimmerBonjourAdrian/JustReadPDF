@@ -2,18 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { StorageService } from '@/services/StorageService';
-import { FileProcessorFactory } from '@/services/FileProcessorFactory';
-import { ProcessedFile } from '@/services/FileProcessorStrategy';
-import { ViewerFactory } from '@/components/ViewerFactory';
-import { ViewerProps } from '@/components/strategies/ViewerStrategy';
-import { LoggerService } from '@/services/LoggerService';
-import { DocumentValidationService } from '@/services/DocumentValidationService';
-import { DocPaletteName } from '@/services/TextFormatterService';
-import EmptyDocumentModal from '@/components/EmptyDocumentModal';
+import { StorageService } from '@/data/StorageService';
+import { FileProcessorFactory } from '@/business/services/FileProcessorFactory';
+import { ProcessedFile } from '@/business/services/FileProcessorStrategy';
+import { ViewerFactory } from '@/presentation/components/ViewerFactory';
+import { ViewerProps } from '@/presentation/components/strategies/ViewerStrategy';
+import { LoggerService } from '@/business/services/LoggerService';
+import { DocumentValidationService } from '@/business/services/DocumentValidationService';
+import { DocPaletteName } from '@/business/services/TextFormatterService';
+import EmptyDocumentModal from '@/presentation/components/EmptyDocumentModal';
 import dynamic from 'next/dynamic';
 
-const FaithfulViewer = dynamic(() => import('@/components/FaithfulViewer'), { ssr: false });
+const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
 export default function Home() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
@@ -188,7 +188,7 @@ export default function Home() {
                   </div>
                   <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
                     <span>Cargar otro</span>
-                    <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub" onChange={handleFileUpload} className="hidden" />
+                    <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub,application/pdf,text/plain,application/rtf,text/rtf,application/x-rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/epub+zip" onChange={handleFileUpload} className="hidden" />
                   </label>
                   <button onClick={handleClearStorage} className="px-3 py-[6px] bg-[#25282B] border border-[#2A2E33] text-[#9CA3AF] rounded-[8px] hover:border-[#3A3E44] hover:text-white transition-colors text-[12px] shrink-0">Limpiar</button>
                 </>
@@ -233,6 +233,7 @@ export default function Home() {
                 <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                   <div className="lg:col-span-7">
                     <p className="text-[11px] tracking-[0.14em] uppercase text-[#C0392B] font-semibold mb-3">Lector privado · 100% local</p>
+<p className="text-[10px] tracking-[0.12em] uppercase text-[#6B7280] mb-4">Versión 1.0.0</p>
                     <h1 className="font-serif text-[42px] md:text-[52px] font-bold tracking-[-0.03em] leading-[0.95] text-white mb-4">Lee documentos<br />largos sin perder<br /><span className="font-normal italic text-[#9CA3AF]">el formato.</span></h1>
                     <p className="text-[15px] leading-[1.7] text-[#9CA3AF] max-w-[48ch] mb-8">Sube PDF, DOCX, EPUB, TXT, RTF o DOC. Extraemos el texto con estructura preservada, listo para copiar, buscar y traducir con Google Translate.</p>
                     <div className="flex flex-wrap gap-3 text-[12px] leading-none">
@@ -253,7 +254,7 @@ export default function Home() {
                         </div>
                         <span className="block text-[14px] font-medium text-white">Arrastra o haz clic para cargar</span>
                         <span className="block text-[12px] text-[#6B7280] mt-1">Máx 50MB · Procesado en tu navegador</span>
-                        <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub" onChange={handleFileUpload} className="hidden" />
+                        <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub,application/pdf,text/plain,application/rtf,text/rtf,application/x-rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/epub+zip" onChange={handleFileUpload} className="hidden" />
                       </label>
                       <p className="text-[11px] leading-[1.6] text-[#6B7280] mt-4">El texto se muestra con títulos, listas y párrafos. Ideal para traducir sin perder estructura.</p>
                     </div>

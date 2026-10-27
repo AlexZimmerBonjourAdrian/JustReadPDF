@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
-import { ViewerDisplayData } from '@/types/ViewerData';
-import type { DocPaletteName } from '@/services/TextFormatterService';
+import { ViewerDisplayData } from '@/data/ViewerData';
+import type { DocPaletteName } from '@/business/services/TextFormatterService';
 
 export interface ViewerProps {
   displayData: ViewerDisplayData;

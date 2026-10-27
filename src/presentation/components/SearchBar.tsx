@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SearchService, SearchResult } from '@/services/SearchService';
+import { SearchService, SearchResult } from '@/business/services/SearchService';
 
 interface SearchBarProps {
   text: string;

@@ -49,7 +49,7 @@ export default function EmptyDocumentModal({ fileName, detail, onClose, onSelect
             Elegir otro archivo
             <input
               type="file"
-              accept=".pdf,.txt,.rtf,.doc,.docx,.epub"
+              accept=".pdf,.txt,.rtf,.doc,.docx,.epub,application/pdf,text/plain,application/rtf,text/rtf,application/x-rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/epub+zip"
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];

@@ -6,7 +6,7 @@ interface StoredDocument {
   timestamp: number;
 }
 
-import { LoggerService } from './LoggerService';
+import { LoggerService } from '../services/LoggerService';
 
 export class StorageService {
   private static DB_NAME = 'JustReadPDF_DB';

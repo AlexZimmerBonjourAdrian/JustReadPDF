@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { LoggerService } from '@/services/LoggerService';
+import { LoggerService } from '@/business/services/LoggerService';
 
 interface FaithfulDocxViewerProps {
   file: File;

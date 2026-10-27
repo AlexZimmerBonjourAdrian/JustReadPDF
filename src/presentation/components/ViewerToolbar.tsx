@@ -1,8 +1,8 @@
 'use client';
 
 import SearchBar from './SearchBar';
-import { DOC_PALETTES, DocPaletteName } from '@/services/TextFormatterService';
-import { ViewerToolbarViewProps } from '@/types/ViewerData';
+import { DOC_PALETTES, DocPaletteName } from '@/business/services/TextFormatterService';
+import { ViewerToolbarViewProps } from '@/data/ViewerData';
 
 const PALETTE_ORDER: DocPaletteName[] = ['dark', 'light', 'sepia'];
 const PALETTE_LABELS: Record<DocPaletteName, string> = {

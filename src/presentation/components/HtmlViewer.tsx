@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ViewerInteractionService } from '@/services/ViewerInteractionService';
-import { DocPaletteName } from '@/services/TextFormatterService';
-import { ViewerDisplayData } from '@/types/ViewerData';
+import { ViewerInteractionService } from '@/business/services/ViewerInteractionService';
+import { DocPaletteName } from '@/business/services/TextFormatterService';
+import { ViewerDisplayData } from '@/data/ViewerData';
 import ViewerToolbar from './ViewerToolbar';
 
 interface HtmlViewerProps {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import { LoggerService } from '@/services/LoggerService';
+import { LoggerService } from '@/business/services/LoggerService';
 
 // Worker en el mismo módulo que renderiza (evita overwrite por orden de módulos)
 if (typeof window !== 'undefined') {
