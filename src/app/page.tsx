@@ -53,11 +53,10 @@ export default function Home() {
           if (!DocumentValidationService.hasExtractableText(stored.extractedText)) {
             LoggerService.warn('App', `stored sin texto: ${stored.file.name}`);
             setEmptyDoc({ fileName: stored.file.name, detail: DocumentValidationService.emptyDetail(stored.extractedText) });
-          } else if (stored.file.type === 'application/pdf' || stored.file.name.endsWith('.pdf')) {
-            // PDF HTML desde texto almacenado (legacy md desconectado -> generar html)
-            const html = `<html><body><pre style="white-space:pre-wrap">${stored.extractedText.replace(/</g,'&lt;')}</pre></body></html>`;
-            const blob = new Blob([html], { type: 'text/html' });
-            const htmlFile = new File([blob], `${stored.file.name.replace(/\.pdf$/i,'')}.html`, { type: 'text/html' });
+          } else if (stored.html) {
+            // Restaurar el HTML "cómodo" exacto guardado en IndexedDB (preserva formato)
+            const blob = new Blob([stored.html], { type: 'text/html' });
+            const htmlFile = new File([blob], `${stored.file.name}.html`, { type: 'text/html' });
             setViewerFile(htmlFile);
             setViewerType('html');
             setOriginalFileName(stored.file.name);
@@ -126,8 +125,9 @@ export default function Home() {
       setViewerType(processed.viewer);
       setOriginalFileName(processed.originalFileName || '');
 
-      // Save to IndexedDB
-      await StorageService.saveDocument(file, processed.text);
+      // Save to IndexedDB (incluye el HTML "cómodo" para preservar formato al recargar)
+      const formattedHtml = await processed.file.text();
+      await StorageService.saveDocument(file, processed.text, formattedHtml);
     } catch (error) {
       LoggerService.error('App', 'handleFileUpload falló:', error);
       resetViewer();

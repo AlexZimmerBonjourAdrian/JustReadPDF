@@ -3,10 +3,11 @@ interface StoredDocument {
   fileType: string;
   fileData: ArrayBuffer;
   extractedText: string;
+  html?: string; // HTML "cómodo" generado para presentación (preserva formato al recargar)
   timestamp: number;
 }
 
-import { LoggerService } from '../services/LoggerService';
+import { LoggerService } from '@/business/services/LoggerService';
 
 export class StorageService {
   private static DB_NAME = 'JustReadPDF_DB';
@@ -29,7 +30,7 @@ export class StorageService {
     });
   }
 
-  static async saveDocument(file: File, extractedText: string): Promise<void> {
+  static async saveDocument(file: File, extractedText: string, html?: string): Promise<void> {
     const end = LoggerService.start('Storage', `saveDocument ${file.name}`);
     try {
       // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
@@ -53,6 +54,7 @@ export class StorageService {
         fileType: file.type,
         fileData: arrayBuffer,
         extractedText,
+        html,
         timestamp: Date.now(),
       };
 
@@ -77,7 +79,7 @@ export class StorageService {
     }
   }
 
-  static async loadDocument(): Promise<{ file: File; extractedText: string } | null> {
+  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string } | null> {
     LoggerService.debug('Storage', 'loadDocument ...');
     try {
       const db = await this.openDB();
@@ -94,8 +96,8 @@ export class StorageService {
               type: latestDoc.fileType,
             });
             db.close();
-            LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars)`);
-            resolve({ file, extractedText: latestDoc.extractedText });
+            LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars, html ${latestDoc.html?.length ?? 0})`);
+            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html });
           } else {
             db.close();
             LoggerService.debug('Storage', 'loadDocument -> null (sin docs)');

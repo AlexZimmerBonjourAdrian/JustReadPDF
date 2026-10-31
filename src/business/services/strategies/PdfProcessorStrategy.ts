@@ -24,8 +24,14 @@ export class PdfProcessorStrategy implements FileProcessorStrategy {
   }
 
   async processStored(storedFile: File): Promise<ProcessedFile> {
-    // For stored PDF, we need the extracted text from storage
-    // This will be handled by the caller passing the stored text
-    throw new Error('PDF stored processing requires extracted text from storage');
+    const plainText = await PdfTextExtractor.extractPlainText(storedFile);
+    const htmlBody = await PdfTextExtractor.extractHtml(storedFile);
+    const body = htmlBody && htmlBody.length > 50 ? htmlBody : `<pre style="white-space:pre-wrap;font-family:ui-monospace,monospace;font-size:13px;line-height:1.7">${plainText.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre>`;
+    const { ViewerFormatterService } = await import('../ViewerFormatterService');
+    const styledHtml = ViewerFormatterService.formatComfortableHtml(body, storedFile.name);
+    const blob = new Blob([styledHtml], { type: 'text/html' });
+    const htmlFile = new File([blob], `${storedFile.name.replace(/\.pdf$/i, '')}.html`, { type: 'text/html' });
+    LoggerService.info('PdfStrategy', `stored OK ${storedFile.name} -> html ${styledHtml.length} chars, texto ${plainText.length} chars`);
+    return { file: htmlFile, text: plainText, viewer: 'html', originalFileName: storedFile.name };
   }
 }
