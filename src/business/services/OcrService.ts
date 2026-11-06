@@ -1,4 +1,3 @@
-import Tesseract from 'tesseract.js';
 import { TextFormatterService } from './TextFormatterService';
 import { LoggerService } from './LoggerService';
 
@@ -26,6 +25,8 @@ export class OcrService {
     try {
       LoggerService.info('OCR', `iniciando OCR para ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
       
+      const { default: Tesseract } = await import('tesseract.js');
+
       const pdfjs = await this.getPdfjs();
       if (!pdfjs) {
         throw new Error('pdfjs no está disponible en este entorno');

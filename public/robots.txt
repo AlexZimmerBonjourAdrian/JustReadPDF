@@ -12,20 +12,15 @@ Allow: /Icon/
 Allow: /Font/
 
 # Sitemap
-Sitemap: https://iridescent-sfogliatella-71f40c.netlify.app/sitemap.xml
-
-# Crawl-delay para ser respetuoso con el servidor
-Crawl-delay: 1
+Sitemap: https://justreadpdf.netlify.app/sitemap.xml
 
 # Reglas específicas para Googlebot
 User-agent: Googlebot
 Allow: /
-Crawl-delay: 0.5
 
 # Reglas específicas para Bingbot
 User-agent: Bingbot
 Allow: /
-Crawl-delay: 0.5
 
 # Reglas para bots de redes sociales
 User-agent: Twitterbot
@@ -38,4 +33,4 @@ Allow: /images/
 
 User-agent: LinkedInBot
 Allow: /
-Allow: /images/ 
+Allow: /images/

@@ -13,19 +13,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://iridescent-sfogliatella-71f40c.netlify.app'),
+  metadataBase: new URL('https://justreadpdf.netlify.app'),
   alternates: {
-    canonical: 'https://iridescent-sfogliatella-71f40c.netlify.app',
-    languages: {
-      'en-US': 'https://iridescent-sfogliatella-71f40c.netlify.app/en',
-      'es-ES': 'https://iridescent-sfogliatella-71f40c.netlify.app',
-    },
+    canonical: 'https://justreadpdf.netlify.app',
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    alternateLocale: ["es_ES"],
-    url: "https://iridescent-sfogliatella-71f40c.netlify.app",
+    url: "https://justreadpdf.netlify.app",
     title: "JustReadPDF - Private & Local Document Reader",
     description: "Read PDF, TXT and RTF with preserved formatting. Integrated search, dark mode and 100% private.",
     siteName: "JustReadPDF",
@@ -34,7 +29,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "JustReadPDF - Lector de Documentos",
+        alt: "JustReadPDF - Private Document Reader",
       },
     ],
   },
@@ -66,13 +61,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const jsonLd = {
+  const jsonLd = [
+    {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
     name: 'JustReadPDF',
     alternateName: ['JustReadPDF - PDF Reader', 'JustReadPDF - Document Reader'],
     description: 'Read PDF, TXT and RTF documents with preserved formatting. Integrated search, dark mode, and 100% local processing for complete privacy.',
-    url: 'https://iridescent-sfogliatella-71f40c.netlify.app',
+    url: 'https://justreadpdf.netlify.app',
     applicationCategory: 'UtilityApplication',
     operatingSystem: 'Web',
     offers: {
@@ -96,13 +92,35 @@ export default function RootLayout({
       '@type': 'Audience',
       audienceType: 'General users',
     },
-  };
+    {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'JustReadPDF',
+      url: 'https://justreadpdf.netlify.app',
+      logo: 'https://justreadpdf.netlify.app/Icon/ajuste_avatar_Documents-3.png',
+      sameAs: [],
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: 'https://justreadpdf.netlify.app',
+        },
+      ],
+    },
+  ];
 
   return (
     <html lang="en" className="dark">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        <link rel="canonical" href="https://iridescent-sfogliatella-71f40c.netlify.app" />
+        <link rel="canonical" href="https://justreadpdf.netlify.app" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content="#0f0f0f" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
