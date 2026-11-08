@@ -92,6 +92,7 @@ export default function RootLayout({
       '@type': 'Audience',
       audienceType: 'General users',
     },
+    },
     {
       '@context': 'https://schema.org',
       '@type': 'Organization',
