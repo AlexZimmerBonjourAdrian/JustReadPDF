@@ -10,17 +10,20 @@ import { ViewerFactory } from '@/presentation/components/ViewerFactory';
 import { ViewerProps } from '@/presentation/components/strategies/ViewerStrategy';
 import { LoggerService } from '@/business/services/LoggerService';
 import { DocumentValidationService } from '@/business/services/DocumentValidationService';
+import { YouTubeUrlService } from '@/business/services/YouTubeUrlService';
 import { DocPaletteName } from '@/business/services/TextFormatterService';
 import EmptyDocumentModal from '@/presentation/components/EmptyDocumentModal';
 import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
+const YouTubeViewer = dynamic(() => import('@/presentation/components/YouTubeViewer'), { ssr: false });
 export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [viewerFile, setViewerFile] = useState<File | null>(null);
-  const [viewerType, setViewerType] = useState<'html' | null>(null);
+  const [viewerType, setViewerType] = useState<'html' | 'youtube' | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('');
+  const [youtubeUrl, setYoutubeUrl] = useState<string>('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -37,6 +40,7 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
+    setYoutubeUrl('');
     setInitialScrollY(0);
     setInitialPage(1);
     setViewMode('comfortable');
@@ -175,6 +179,18 @@ export default function HomeClient() {
     }
   };
 
+  const handleYouTubeSubmit = (rawUrl: string) => {
+    const embed = YouTubeUrlService.toEmbedUrl(rawUrl);
+    if (!embed) {
+      alert('Enlace de YouTube no válido');
+      return;
+    }
+    resetViewer();
+    setYoutubeUrl(embed);
+    setViewerType('youtube');
+    setViewMode('faithful');
+  };
+
   const handleClearStorage = async () => {
     LoggerService.debug('App', 'clear storage');
     await StorageService.clearDocuments();
@@ -207,7 +223,14 @@ export default function HomeClient() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            {viewerFile && viewerType ? (() => {
+            {(viewerFile && viewerType) || (viewerType === 'youtube' && youtubeUrl) ? (() => {
+              if (viewerType === 'youtube' && youtubeUrl) {
+                return (
+                  <motion.div key="youtube-viewer" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="flex-1 min-h-0 flex flex-col">
+                    <YouTubeViewer url={youtubeUrl} />
+                  </motion.div>
+                );
+              }
               const strategy = ViewerFactory.getStrategy(viewerType);
               if (!strategy) return null;
               const displayData = {
@@ -281,6 +304,27 @@ export default function HomeClient() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[11px] tracking-[0.12em] uppercase font-semibold text-white">Cargar documento</h3>
                         <span className="text-[11px] text-[#6B7280]">PDF · DOCX · EPUB · TXT · RTF · DOC</span>
+                      </div>
+                      <div className="mb-4">
+                        <input
+                          type="url"
+                          placeholder="Pegar enlace de YouTube"
+                          className="w-full px-3 py-2 rounded-[8px] bg-[#0f0f0f] border border-[#3A3E44] text-white text-[13px] mb-2"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleYouTubeSubmit((e.target as HTMLInputElement).value);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
+                            handleYouTubeSubmit(input?.value || '');
+                          }}
+                          className="w-full px-3 py-2 rounded-[8px] bg-[#C0392B] text-white text-[12px] font-medium hover:bg-[#A93226]"
+                        >
+                          Cargar video de YouTube
+                        </button>
                       </div>
                       <label className="group block rounded-[12px] border border-dashed border-[#3A3E44] hover:border-[#6B7280] bg-[#0f0f0f] hover:bg-[#1a1a1a] transition-colors cursor-pointer p-8 text-center">
                         <div className="mx-auto w-9 h-9 rounded-full bg-white text-[#0f0f0f] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
