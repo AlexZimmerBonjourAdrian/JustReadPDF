@@ -24,6 +24,7 @@ export default function HomeClient() {
   const [viewerType, setViewerType] = useState<'html' | 'youtube' | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('');
   const [youtubeUrl, setYoutubeUrl] = useState<string>('');
+  const [showYouTubeOverlay, setShowYouTubeOverlay] = useState<boolean>(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -41,6 +42,7 @@ export default function HomeClient() {
     setViewerType(null);
     setOriginalFileName('');
     setYoutubeUrl('');
+    setShowYouTubeOverlay(false);
     setInitialScrollY(0);
     setInitialPage(1);
     setViewMode('comfortable');
@@ -240,9 +242,29 @@ export default function HomeClient() {
               const toolbarActions = (
                 <>
                   <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33] shrink-0">
-                    <button onClick={() => { setViewMode('comfortable'); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
+                    <button onClick={() => { setViewMode('comfortable'); setShowYouTubeOverlay(false); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
                     <button onClick={() => { setViewMode('faithful'); scheduleViewStateSave({ viewMode: 'faithful' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
                   </div>
+                  {viewMode === 'faithful' && (
+                    <label className="flex items-center gap-2 px-3 py-[6px] bg-[#25282B] border border-[#2A2E33] rounded-[8px] text-[12px] text-[#9CA3AF] shrink-0 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={showYouTubeOverlay}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setShowYouTubeOverlay(checked);
+                          if (checked && !youtubeUrl) {
+                            const raw = window.prompt('Pegar enlace de YouTube') || '';
+                            const embed = YouTubeUrlService.toEmbedUrl(raw);
+                            if (embed) setYoutubeUrl(embed);
+                            else { setShowYouTubeOverlay(false); if (raw) alert('Enlace de YouTube no válido'); }
+                          }
+                        }}
+                        className="accent-[#C0392B]"
+                      />
+                      <span>Video de YouTube</span>
+                    </label>
+                  )}
                   <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
                     <span>Cargar otro</span>
                     <input type="file" accept=".pdf,.txt,.rtf,.doc,.docx,.epub,application/pdf,text/plain,application/rtf,text/rtf,application/x-rtf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/epub+zip" onChange={handleFileUpload} className="hidden" />
@@ -358,6 +380,18 @@ export default function HomeClient() {
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           </nav>
         </div>
+      {showYouTubeOverlay && youtubeUrl && (
+        <div className="fixed bottom-4 right-4 z-50 w-[min(90vw,420px)] aspect-video rounded-[12px] overflow-hidden shadow-2xl border border-[#2A2E33] bg-black">
+          <button
+            onClick={() => setShowYouTubeOverlay(false)}
+            className="absolute top-2 right-2 z-10 px-2 py-1 rounded-[6px] bg-black/60 text-white text-[11px] hover:bg-black/80"
+            aria-label="Cerrar video"
+          >
+            ✕
+          </button>
+          <YouTubeViewer url={youtubeUrl} compact />
+        </div>
+      )}
       </footer>
 
       {/* Popup validación: documento sin texto */}

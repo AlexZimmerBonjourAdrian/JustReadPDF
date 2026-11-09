@@ -5,13 +5,32 @@ import { useState } from 'react';
 interface YouTubeViewerProps {
   url: string;
   title?: string;
+  compact?: boolean;
 }
 
-export default function YouTubeViewer({ url, title = 'YouTube' }: YouTubeViewerProps) {
+export default function YouTubeViewer({ url, title = 'YouTube', compact = false }: YouTubeViewerProps) {
   const [error, setError] = useState<string>('');
 
   if (!url) {
     return <p className="text-[12px] text-[#6B7280] text-center py-8">Sin enlace de YouTube.</p>;
+  }
+
+  if (compact) {
+    return (
+      <div className="w-full h-full bg-black">
+        {error && <p className="text-[12px] text-[#C0392B] text-center py-2">{error}</p>}
+        <iframe
+          src={url}
+          title={title}
+          className="w-full h-full border-0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          sandbox="allow-scripts allow-same-origin allow-presentation"
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          onError={() => setError('No se pudo cargar el video.')}
+        />
+      </div>
+    );
   }
 
   return (
