@@ -28,7 +28,7 @@ export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
           height: '100%',
         });
         rendition.themes.default({
-          body: { 'background': '#fff !important', 'color': '#111 !important', 'font-family': 'Georgia, serif !important', 'padding': '24px 32px !important' },
+          body: { 'background': '#fff !important', 'color': '#111 !important', 'font-family': 'Georgia, serif !important', 'padding': '16px 20px !important' },
           'p': { 'line-height': '1.7 !important' },
         });
         await rendition.display();
@@ -49,7 +49,7 @@ export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f]">
       {error && <p className="text-[12px] text-[#C0392B] text-center py-2 shrink-0">{error}</p>}
-      <div ref={viewerRef} className="flex-1 min-h-0 overflow-auto bg-white mx-4 my-4 rounded-[8px]" style={{ minHeight: '60vh' }} />
+      <div ref={viewerRef} className="flex-1 min-h-0 overflow-auto bg-white mx-2 sm:mx-4 my-2 sm:my-4 rounded-[8px]" style={{ minHeight: '60vh' }} />
     </div>
   );
 }

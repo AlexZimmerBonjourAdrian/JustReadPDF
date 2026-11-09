@@ -53,7 +53,8 @@ export default function FaithfulDocxViewer({ file }: FaithfulDocxViewerProps) {
     <div className="flex-1 min-h-0 overflow-auto bg-[#0f0f0f] py-6 px-4">
       <style>{`
         .faithful-docx-wrapper { background: transparent !important; padding: 0 !important; }
-        .faithful-docx { background: #fff !important; color: #111 !important; max-width: 816px; margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
+        .faithful-docx { background: #fff !important; color: #111 !important; width: 100%; max-width: min(100%, 816px); margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
+        @media (max-width: 640px) { .faithful-docx { max-width: 100%; box-shadow: none; } }
         .faithful-docx section { box-shadow: none !important; margin-bottom: 16px !important; }
       `}</style>
       {loading && <p className="text-[12px] text-[#6B7280] text-center">Renderizando DOCX…</p>}
