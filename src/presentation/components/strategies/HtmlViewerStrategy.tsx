@@ -8,6 +8,6 @@ export class HtmlViewerStrategy implements ViewerStrategy {
   }
 
   render(props: ViewerProps): ReactElement {
-    return <HtmlViewer displayData={props.displayData} toolbarActions={props.toolbarActions} palette={props.palette} onPaletteChange={props.onPaletteChange} />;
+    return <HtmlViewer displayData={props.displayData} toolbarActions={props.toolbarActions} palette={props.palette} onPaletteChange={props.onPaletteChange} initialScrollY={props.initialScrollY} onScroll={props.onScroll} />;
   }
 }

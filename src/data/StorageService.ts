@@ -5,6 +5,11 @@ interface StoredDocument {
   extractedText: string;
   html?: string; // HTML "cómodo" generado para presentación (preserva formato al recargar)
   timestamp: number;
+  // Estado de UI persistido para restaurar la experiencia del usuario
+  viewMode?: 'comfortable' | 'faithful';
+  scrollY?: number;
+  pageNumber?: number;
+  palette?: string;
 }
 
 import { LoggerService } from '@/business/services/LoggerService';
@@ -30,7 +35,7 @@ export class StorageService {
     });
   }
 
-  static async saveDocument(file: File, extractedText: string, html?: string): Promise<void> {
+  static async saveDocument(file: File, extractedText: string, html?: string, uiState?: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string }): Promise<void> {
     const end = LoggerService.start('Storage', `saveDocument ${file.name}`);
     try {
       // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
@@ -56,6 +61,10 @@ export class StorageService {
         extractedText,
         html,
         timestamp: Date.now(),
+        viewMode: uiState?.viewMode,
+        scrollY: uiState?.scrollY,
+        pageNumber: uiState?.pageNumber,
+        palette: uiState?.palette,
       };
 
       store.add(document);
@@ -79,7 +88,7 @@ export class StorageService {
     }
   }
 
-  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string } | null> {
+  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string; viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string } | null> {
     LoggerService.debug('Storage', 'loadDocument ...');
     try {
       const db = await this.openDB();
@@ -97,7 +106,7 @@ export class StorageService {
             });
             db.close();
             LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars, html ${latestDoc.html?.length ?? 0})`);
-            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html });
+            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html, viewMode: latestDoc.viewMode, scrollY: latestDoc.scrollY, pageNumber: latestDoc.pageNumber, palette: latestDoc.palette });
           } else {
             db.close();
             LoggerService.debug('Storage', 'loadDocument -> null (sin docs)');
@@ -112,6 +121,50 @@ export class StorageService {
     } catch (error) {
       LoggerService.error('Storage', 'Error loading document from IndexedDB:', error);
       return null;
+    }
+  }
+
+  static async saveViewState(patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string }): Promise<void> {
+    try {
+      const db = await this.openDB();
+      const transaction = db.transaction([this.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAME);
+      const request = store.getAll();
+
+      await new Promise<void>((resolve, reject) => {
+        request.onsuccess = () => {
+          const documents = request.result as StoredDocument[];
+          if (documents.length > 0) {
+            const latest = documents[documents.length - 1];
+            const updated: StoredDocument = {
+              ...latest,
+              viewMode: patch.viewMode ?? latest.viewMode,
+              scrollY: patch.scrollY ?? latest.scrollY,
+              pageNumber: patch.pageNumber ?? latest.pageNumber,
+              palette: patch.palette ?? latest.palette,
+            };
+            const putReq = store.put(updated);
+            putReq.onsuccess = () => resolve();
+            putReq.onerror = () => reject(putReq.error);
+          } else {
+            resolve();
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        transaction.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      });
+    } catch (error) {
+      LoggerService.error('Storage', 'Error saving view state:', error);
     }
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StorageService } from '@/data/StorageService';
@@ -26,6 +26,9 @@ export default function HomeClient() {
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [viewMode, setViewMode] = useState<'comfortable' | 'faithful'>('comfortable');
   const [palette, setPalette] = useState<DocPaletteName>('dark');
+  const [initialScrollY, setInitialScrollY] = useState<number>(0);
+  const [initialPage, setInitialPage] = useState<number>(1);
+  const saveViewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [emptyDoc, setEmptyDoc] = useState<{ fileName: string; detail: string } | null>(null);
 
   const resetViewer = () => {
@@ -34,10 +37,36 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
+    setInitialScrollY(0);
+    setInitialPage(1);
+    setViewMode('comfortable');
+  };
+
+  const scheduleViewStateSave = (patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: DocPaletteName }) => {
+    if (saveViewTimer.current) clearTimeout(saveViewTimer.current);
+    saveViewTimer.current = setTimeout(() => {
+      StorageService.saveViewState({
+        viewMode: patch.viewMode,
+        scrollY: patch.scrollY,
+        pageNumber: patch.pageNumber,
+        palette: patch.palette,
+      });
+    }, 400);
   };
 
   useEffect(() => {
     loadStoredDocument();
+  }, []);
+
+  useEffect(() => {
+    const flush = () => {
+      if (saveViewTimer.current) {
+        clearTimeout(saveViewTimer.current);
+        saveViewTimer.current = null;
+      }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
   }, []);
 
   const loadStoredDocument = async () => {
@@ -48,6 +77,10 @@ export default function HomeClient() {
         LoggerService.info('App', `stored encontrado: ${stored.file.name}`);
         setPdfFile(stored.file);
         setExtractedText(stored.extractedText);
+        setViewMode(stored.viewMode === 'faithful' ? 'faithful' : 'comfortable');
+        setInitialScrollY(stored.scrollY ?? 0);
+        setInitialPage(stored.pageNumber ?? 1);
+        setPalette((stored.palette as DocPaletteName) ?? 'dark');
         
         const strategy = FileProcessorFactory.getStrategy(stored.file);
         if (strategy) {
@@ -128,7 +161,7 @@ export default function HomeClient() {
 
       // Save to IndexedDB (incluye el HTML "cómodo" para preservar formato al recargar)
       const formattedHtml = await processed.file.text();
-      await StorageService.saveDocument(file, processed.text, formattedHtml);
+      await StorageService.saveDocument(file, processed.text, formattedHtml, { viewMode: 'comfortable', scrollY: 0, pageNumber: 1, palette });
     } catch (error) {
       LoggerService.error('App', 'handleFileUpload falló:', error);
       resetViewer();
@@ -184,8 +217,8 @@ export default function HomeClient() {
               const toolbarActions = (
                 <>
                   <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33] shrink-0">
-                    <button onClick={() => setViewMode('comfortable')} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
-                    <button onClick={() => setViewMode('faithful')} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
+                    <button onClick={() => { setViewMode('comfortable'); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
+                    <button onClick={() => { setViewMode('faithful'); scheduleViewStateSave({ viewMode: 'faithful' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
                   </div>
                   <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
                     <span>Cargar otro</span>
@@ -204,11 +237,11 @@ export default function HomeClient() {
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className="flex-1 min-h-0 flex flex-col"
                   >
-                    <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} />
+                    <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => scheduleViewStateSave({ pageNumber: p })} />
                   </motion.div>
                 );
               }
-              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: setPalette } as ViewerProps;
+              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: (p: DocPaletteName) => { setPalette(p); scheduleViewStateSave({ palette: p }); }, initialScrollY, onScroll: (y: number) => scheduleViewStateSave({ scrollY: y }) } as ViewerProps;
               
               return (
                 <motion.div

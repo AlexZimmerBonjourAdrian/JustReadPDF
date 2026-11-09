@@ -11,9 +11,11 @@ interface HtmlViewerProps {
   toolbarActions?: React.ReactNode;
   palette?: DocPaletteName;
   onPaletteChange?: (palette: DocPaletteName) => void;
+  initialScrollY?: number;
+  onScroll?: (y: number) => void;
 }
 
-export default function HtmlViewer({ displayData, toolbarActions, palette = 'dark', onPaletteChange }: HtmlViewerProps) {
+export default function HtmlViewer({ displayData, toolbarActions, palette = 'dark', onPaletteChange, initialScrollY = 0, onScroll }: HtmlViewerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [htmlContent, setHtmlContent] = useState<string>('');
   const { fileData, content } = displayData;
@@ -37,13 +39,42 @@ export default function HtmlViewer({ displayData, toolbarActions, palette = 'dar
         doc.write(htmlContent);
         doc.close();
         ViewerInteractionService.applyPaletteToIframe(iframe, palette);
+        // Restaurar posición guardada
+        try {
+          iframe.contentWindow?.scrollTo(0, initialScrollY || 0);
+        } catch {
+          // ignore
+        }
       }
     }
-  }, [htmlContent]);
+  }, [htmlContent, initialScrollY, palette]);
 
   useEffect(() => {
     ViewerInteractionService.applyPaletteToIframe(iframeRef.current, palette);
   }, [palette]);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !onScroll) return;
+    const win = iframe.contentWindow;
+    if (!win) return;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    const handler = () => {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => onScroll(win.scrollY || win.pageYOffset || 0), 300);
+    };
+    // El documento se escribe de forma asíncrona; esperar a que exista.
+    const attach = () => {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
+      win.addEventListener('scroll', handler);
+    };
+    attach();
+    return () => {
+      win.removeEventListener('scroll', handler);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [htmlContent, onScroll]);
 
   return (
     <div id="html-viewer" className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">

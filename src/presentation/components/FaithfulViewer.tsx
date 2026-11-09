@@ -22,17 +22,19 @@ interface FaithfulViewerProps {
   plainText: string;
   onSearchNavigate: (lineNumber: number) => void;
   toolbarActions?: React.ReactNode;
+  initialPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // View fiel: render nativo por formato. TXT/RTF/DOC legacy caen a cómodo (ya es fiel).
-export default function FaithfulViewer({ originalFile, plainText, onSearchNavigate, toolbarActions }: FaithfulViewerProps) {
+export default function FaithfulViewer({ originalFile, plainText, onSearchNavigate, toolbarActions, initialPage, onPageChange }: FaithfulViewerProps) {
   const kind = detectFaithfulKind(originalFile);
   const fileName = originalFile.name;
 
   return (
     <div className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">
       <ViewerToolbar fileName={fileName} plainText={kind === 'pdf' ? '' : plainText} onSearchNavigate={onSearchNavigate} actions={toolbarActions} />
-      {kind === 'pdf' && <FaithfulPdfViewer file={originalFile} />}
+      {kind === 'pdf' && <FaithfulPdfViewer file={originalFile} initialPage={initialPage} onPageChange={onPageChange} />}
       {kind === 'docx' && <FaithfulDocxViewer file={originalFile} />}
       {kind === 'epub' && <FaithfulEpubViewer file={originalFile} />}
       {kind === 'unsupported' && (

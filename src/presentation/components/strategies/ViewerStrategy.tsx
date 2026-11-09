@@ -7,6 +7,8 @@ export interface ViewerProps {
   toolbarActions?: React.ReactNode;
   palette?: DocPaletteName;
   onPaletteChange?: (palette: DocPaletteName) => void;
+  initialScrollY?: number;
+  onScroll?: (y: number) => void;
 }
 
 export interface ViewerStrategy {

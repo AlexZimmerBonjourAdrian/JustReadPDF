@@ -13,10 +13,12 @@ if (typeof window !== 'undefined') {
 
 interface FaithfulPdfViewerProps {
   file: File;
+  initialPage?: number;
+  onPageChange?: (page: number) => void;
 }
 
 // View fiel PDF: render vectorial canvas vía PDF.js, sin extracción a texto
-export default function FaithfulPdfViewer({ file }: FaithfulPdfViewerProps) {
+export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange }: FaithfulPdfViewerProps) {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.25);
@@ -25,9 +27,13 @@ export default function FaithfulPdfViewer({ file }: FaithfulPdfViewerProps) {
   useEffect(() => {
     const url = URL.createObjectURL(file);
     setFileUrl(url);
-    setPageNumber(1);
+    setPageNumber(initialPage && initialPage >= 1 ? initialPage : 1);
     return () => URL.revokeObjectURL(url);
-  }, [file]);
+  }, [file, initialPage]);
+
+  useEffect(() => {
+    onPageChange?.(pageNumber);
+  }, [pageNumber, onPageChange]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f]">
@@ -47,6 +53,9 @@ export default function FaithfulPdfViewer({ file }: FaithfulPdfViewerProps) {
             onLoadSuccess={({ numPages }) => {
               LoggerService.info('FaithfulPDF', `${file.name}: ${numPages} páginas`);
               setNumPages(numPages);
+              if (initialPage && initialPage >= 1 && initialPage <= numPages) {
+                setPageNumber(initialPage);
+              }
             }}
             onLoadError={(err) => LoggerService.error('FaithfulPDF', `load ${file.name} falló:`, err)}
             loading={<p className="text-[12px] text-[#6B7280]">Cargando PDF…</p>}
