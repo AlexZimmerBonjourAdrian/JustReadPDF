@@ -46,7 +46,7 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
-    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable', faithfulSubmode: 'compact', bookmark: undefined });
+    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable', faithfulSubmode: 'compact' });
     clearBookmarkState();
   };
 
