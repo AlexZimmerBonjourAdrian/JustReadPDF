@@ -38,7 +38,6 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
     const url = URL.createObjectURL(file);
     setFileUrl(url);
     setPageNumber(initialPage && initialPage >= 1 ? initialPage : 1);
-    setUserZoom(false);
     return () => URL.revokeObjectURL(url);
   }, [file, initialPage]);
 
