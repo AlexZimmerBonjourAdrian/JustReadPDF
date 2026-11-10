@@ -7,22 +7,10 @@ type FaithfulSubmode = 'compact' | 'pdf' | 'book';
 interface HamburgerMenuProps {
   submode: FaithfulSubmode;
   onSubmodeChange: (submode: FaithfulSubmode) => void;
-  showYouTubeOverlay: boolean;
-  onToggleYouTube: (checked: boolean) => void;
-  youtubeUrl: string;
-  onSetYouTubeUrl: (url: string) => void;
 }
 
-export default function HamburgerMenu({
-  submode,
-  onSubmodeChange,
-  showYouTubeOverlay,
-  onToggleYouTube,
-  youtubeUrl,
-  onSetYouTubeUrl,
-}: HamburgerMenuProps) {
+export default function HamburgerMenu({ submode, onSubmodeChange }: HamburgerMenuProps) {
   const [open, setOpen] = useState(false);
-  const [draftUrl, setDraftUrl] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,13 +29,6 @@ export default function HamburgerMenu({
       document.removeEventListener('keydown', onKey);
     };
   }, []);
-
-  const handleLoadUrl = () => {
-    if (draftUrl.trim()) {
-      onSetYouTubeUrl(draftUrl.trim());
-      setDraftUrl('');
-    }
-  };
 
   return (
     <div ref={containerRef} className="absolute top-3 right-3 z-50">
@@ -77,50 +58,6 @@ export default function HamburgerMenu({
                 </button>
               ))}
             </div>
-          </div>
-
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.12em] text-[#6B7280] mb-2">Video de YouTube</p>
-            <label className="flex items-center gap-2 text-[12px] text-[#9CA3AF] cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showYouTubeOverlay}
-                onChange={(e) => onToggleYouTube(e.target.checked)}
-                className="accent-[#C0392B]"
-              />
-              <span>Mostrar overlay</span>
-            </label>
-
-            {showYouTubeOverlay && !youtubeUrl && (
-              <div className="mt-2 space-y-2">
-                <input
-                  type="url"
-                  value={draftUrl}
-                  onChange={(e) => setDraftUrl(e.target.value)}
-                  placeholder="Pegar enlace de YouTube"
-                  className="w-full px-2 py-1.5 rounded-[6px] bg-[#0f0f0f] border border-[#3A3E44] text-white text-[12px]"
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleLoadUrl(); }}
-                />
-                <button
-                  onClick={handleLoadUrl}
-                  className="w-full px-2 py-1.5 rounded-[6px] bg-[#C0392B] text-white text-[11px] font-medium hover:bg-[#A93226]"
-                >
-                  Cargar video
-                </button>
-              </div>
-            )}
-
-            {youtubeUrl && (
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <span className="text-[11px] text-[#9CA3AF] truncate">Video cargado</span>
-                <button
-                  onClick={() => onSetYouTubeUrl('')}
-                  className="text-[11px] text-[#C0392B] hover:underline"
-                >
-                  Quitar
-                </button>
-              </div>
-            )}
           </div>
         </div>
       )}

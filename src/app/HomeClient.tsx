@@ -10,22 +10,20 @@ import { ViewerFactory } from '@/presentation/components/ViewerFactory';
 import { ViewerProps } from '@/presentation/components/strategies/ViewerStrategy';
 import { LoggerService } from '@/business/services/LoggerService';
 import { DocumentValidationService } from '@/business/services/DocumentValidationService';
-import { YouTubeUrlService } from '@/business/services/YouTubeUrlService';
 import { DocPaletteName } from '@/business/services/TextFormatterService';
 import EmptyDocumentModal from '@/presentation/components/EmptyDocumentModal';
 import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
-const YouTubeViewer = dynamic(() => import('@/presentation/components/YouTubeViewer'), { ssr: false });
 const HamburgerMenu = dynamic(() => import('@/presentation/components/HamburgerMenu'), { ssr: false });
+const YouTubeTool = dynamic(() => import('@/presentation/components/YouTubeTool'), { ssr: false });
 export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [viewerFile, setViewerFile] = useState<File | null>(null);
-  const [viewerType, setViewerType] = useState<'html' | 'youtube' | null>(null);
+  const [viewerType, setViewerType] = useState<'html' | null>(null);
+  const [appMode, setAppMode] = useState<'document' | 'youtube'>('document');
   const [originalFileName, setOriginalFileName] = useState<string>('');
-  const [youtubeUrl, setYoutubeUrl] = useState<string>('');
-  const [showYouTubeOverlay, setShowYouTubeOverlay] = useState<boolean>(false);
   const [faithfulSubmode, setFaithfulSubmode] = useState<'compact' | 'pdf' | 'book'>('compact');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,8 +41,6 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
-    setYoutubeUrl('');
-    setShowYouTubeOverlay(false);
     setFaithfulSubmode('compact');
     setInitialScrollY(0);
     setInitialPage(1);
@@ -185,18 +181,6 @@ export default function HomeClient() {
     }
   };
 
-  const handleYouTubeSubmit = (rawUrl: string) => {
-    const embed = YouTubeUrlService.toEmbedUrl(rawUrl);
-    if (!embed) {
-      alert('Enlace de YouTube no válido');
-      return;
-    }
-    resetViewer();
-    setYoutubeUrl(embed);
-    setViewerType('youtube');
-    setViewMode('faithful');
-  };
-
   const handleClearStorage = async () => {
     LoggerService.debug('App', 'clear storage');
     await StorageService.clearDocuments();
@@ -210,9 +194,26 @@ export default function HomeClient() {
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex flex-col relative">
 
+      <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2E33] bg-[#0f0f0f] shrink-0">
+        <button
+          onClick={() => setAppMode('document')}
+          className={`px-3 py-1.5 rounded-[8px] text-[12px] transition-colors ${appMode === 'document' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
+        >
+          Documentos
+        </button>
+        <button
+          onClick={() => setAppMode('youtube')}
+          className={`px-3 py-1.5 rounded-[8px] text-[12px] transition-colors ${appMode === 'youtube' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
+        >
+          YouTube
+        </button>
+      </div>
+
       {/* DocumentView - Prioridad máxima */}
       <div className="flex-1 flex flex-col bg-[#0f0f0f]">
-        {isLoading ? (
+        {appMode === 'youtube' ? (
+          <YouTubeTool />
+        ) : isLoading ? (
           <div className="flex-1 flex items-center justify-center py-24">
             <p className="text-[13px] tracking-[0.08em] uppercase text-[#6B7280]">Cargando documento…</p>
           </div>
@@ -229,14 +230,7 @@ export default function HomeClient() {
           </div>
         ) : (
           <AnimatePresence mode="wait">
-            {(viewerFile && viewerType) || (viewerType === 'youtube' && youtubeUrl) ? (() => {
-              if (viewerType === 'youtube' && youtubeUrl) {
-                return (
-                  <motion.div key="youtube-viewer" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4, ease: 'easeOut' }} className="flex-1 min-h-0 flex flex-col">
-                    <YouTubeViewer url={youtubeUrl} />
-                  </motion.div>
-                );
-              }
+            {viewerFile && viewerType ? (() => {
               const strategy = ViewerFactory.getStrategy(viewerType);
               if (!strategy) return null;
               const displayData = {
@@ -246,7 +240,7 @@ export default function HomeClient() {
               const toolbarActions = (
                 <>
                   <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33] shrink-0">
-                    <button onClick={() => { setViewMode('comfortable'); setShowYouTubeOverlay(false); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
+                    <button onClick={() => { setViewMode('comfortable'); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
                     <button onClick={() => { setViewMode('faithful'); scheduleViewStateSave({ viewMode: 'faithful' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
                   </div>
                   <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
@@ -271,18 +265,6 @@ export default function HomeClient() {
                       <HamburgerMenu
                         submode={faithfulSubmode}
                         onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }}
-                        showYouTubeOverlay={showYouTubeOverlay}
-                        onToggleYouTube={(checked) => {
-                          setShowYouTubeOverlay(checked);
-                          if (checked && !youtubeUrl) {
-                            const raw = window.prompt('Pegar enlace de YouTube') || '';
-                            const embed = YouTubeUrlService.toEmbedUrl(raw);
-                            if (embed) setYoutubeUrl(embed);
-                            else { setShowYouTubeOverlay(false); if (raw) alert('Enlace de YouTube no válido'); }
-                          }
-                        }}
-                        youtubeUrl={youtubeUrl}
-                        onSetYouTubeUrl={setYoutubeUrl}
                       />
                     </div>
                   </motion.div>
@@ -329,27 +311,6 @@ export default function HomeClient() {
                         <h3 className="text-[11px] tracking-[0.12em] uppercase font-semibold text-white">Cargar documento</h3>
                         <span className="text-[11px] text-[#6B7280]">PDF · DOCX · EPUB · TXT · RTF · DOC</span>
                       </div>
-                      <div className="mb-4">
-                        <input
-                          type="url"
-                          placeholder="Pegar enlace de YouTube"
-                          className="w-full px-3 py-2 rounded-[8px] bg-[#0f0f0f] border border-[#3A3E44] text-white text-[13px] mb-2"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              handleYouTubeSubmit((e.target as HTMLInputElement).value);
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={(e) => {
-                            const input = (e.currentTarget.previousElementSibling as HTMLInputElement);
-                            handleYouTubeSubmit(input?.value || '');
-                          }}
-                          className="w-full px-3 py-2 rounded-[8px] bg-[#C0392B] text-white text-[12px] font-medium hover:bg-[#A93226]"
-                        >
-                          Cargar video de YouTube
-                        </button>
-                      </div>
                       <label className="group block rounded-[12px] border border-dashed border-[#3A3E44] hover:border-[#6B7280] bg-[#0f0f0f] hover:bg-[#1a1a1a] transition-colors cursor-pointer p-8 text-center">
                         <div className="mx-auto w-9 h-9 rounded-full bg-white text-[#0f0f0f] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -382,18 +343,6 @@ export default function HomeClient() {
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
           </nav>
         </div>
-      {showYouTubeOverlay && youtubeUrl && (
-        <div className="fixed bottom-4 right-4 z-50 w-[min(90vw,420px)] aspect-video rounded-[12px] overflow-hidden shadow-2xl border border-[#2A2E33] bg-black">
-          <button
-            onClick={() => setShowYouTubeOverlay(false)}
-            className="absolute top-2 right-2 z-10 px-2 py-1 rounded-[6px] bg-black/60 text-white text-[11px] hover:bg-black/80"
-            aria-label="Cerrar video"
-          >
-            ✕
-          </button>
-          <YouTubeViewer url={youtubeUrl} compact />
-        </div>
-      )}
       </footer>
 
       {/* Popup validación: documento sin texto */}
