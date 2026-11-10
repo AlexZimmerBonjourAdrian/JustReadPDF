@@ -97,7 +97,6 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f] relative">
-      {/* Barra de controles sticky */}
       <div className="sticky top-0 z-30 flex items-center justify-center gap-2 px-4 h-[40px] bg-[#1a1a1a] border-b border-[#2A2E33] shrink-0 text-[12px]">
         {submode !== 'pdf' && (
           <>
@@ -118,9 +117,8 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
             🔖 Ir al marcador
           </button>
         )}
-      </div>
 
-      {/* Panel flotante de herramientas tipo YouTube */}
+      </div>
       {submode === 'pdf' && (
         <>
           <button
@@ -140,10 +138,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
           )}
         </>
       )}
-
-      {/* Contenedor de páginas: centrado horizontalmente */}
       <div ref={containerRef} className="flex-1 min-h-0 overflow-auto py-6 px-4 flex flex-col items-center">
-        {/* Overlay de carga mientras se inicializa el PDF */}
         {isLoading && numPages === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f0f]/90 z-40 backdrop-blur-sm">
             <div className="w-12 h-12 border-4 border-[#C0392B] border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -175,7 +170,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                   const isMarked = isPageMarked(p);
                   return (
                     <div key={`page-${p}`} className="relative w-full max-w-[612px] min-h-[792px] mx-auto">
-                      <div className="relative">
+                      <div className="relative z-0">
                         <Page
                           pageNumber={p}
                           scale={baseScale}
