@@ -43,8 +43,7 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
-    setFaithfulSubmode('compact');
-    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable' });
+    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable', faithfulSubmode: 'compact' });
   };
 
 
