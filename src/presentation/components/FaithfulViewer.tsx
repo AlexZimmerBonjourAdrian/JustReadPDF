@@ -37,21 +37,6 @@ export default function FaithfulViewer({ originalFile, plainText, onSearchNaviga
     <div className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">
       <ViewerToolbar fileName={fileName} plainText={kind === 'pdf' ? '' : plainText} onSearchNavigate={onSearchNavigate} actions={toolbarActions} />
       {kind === 'pdf' && <FaithfulPdfViewer file={originalFile} initialPage={initialPage} onPageChange={onPageChange} submode={submode} onSubmodeChange={onSubmodeChange} />}
-      {kind !== 'pdf' && submode && onSubmodeChange && (
-        <div className="flex items-center justify-center gap-2 px-4 h-[40px] bg-[#1a1a1a] border-b border-[#2A2E33] shrink-0 text-[12px]">
-          <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33]">
-            {(['compact', 'pdf', 'book'] as const).map((m) => (
-              <button
-                key={m}
-                onClick={() => onSubmodeChange(m)}
-                className={`px-2.5 py-1 text-[11px] transition-colors ${submode === m ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
-              >
-                {m === 'compact' ? 'Compacto' : m === 'pdf' ? 'PDF' : 'Book'}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       {kind === 'docx' && <FaithfulDocxViewer file={originalFile} submode={submode} />}
       {kind === 'epub' && <FaithfulEpubViewer file={originalFile} submode={submode} />}
       {kind === 'unsupported' && (

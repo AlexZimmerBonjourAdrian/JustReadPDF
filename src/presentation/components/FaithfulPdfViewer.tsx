@@ -77,18 +77,6 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f]">
       <div className="flex items-center justify-center gap-2 px-4 h-[40px] bg-[#1a1a1a] border-b border-[#2A2E33] shrink-0 text-[12px]">
-        <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33]">
-          {(['compact', 'pdf', 'book'] as FaithfulSubmode[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => onSubmodeChange?.(m)}
-              className={`px-2.5 py-1 text-[11px] transition-colors ${submode === m ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
-            >
-              {m === 'compact' ? 'Compacto' : m === 'pdf' ? 'PDF' : 'Book'}
-            </button>
-          ))}
-        </div>
-        <span className="w-px h-4 bg-[#2A2E33] mx-1" />
         <button onClick={goPrev} disabled={pageNumber <= 1} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white disabled:opacity-40">←</button>
         <span className="text-[#9CA3AF] font-mono">
           {isBook ? `${pageNumber}–${secondPage}` : pageNumber} / {numPages || '…'}

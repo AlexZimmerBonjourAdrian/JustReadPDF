@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
 const YouTubeViewer = dynamic(() => import('@/presentation/components/YouTubeViewer'), { ssr: false });
+const HamburgerMenu = dynamic(() => import('@/presentation/components/HamburgerMenu'), { ssr: false });
 export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
@@ -267,26 +268,22 @@ export default function HomeClient() {
                   >
                     <div className="relative flex-1 min-h-0 flex flex-col">
                       <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => scheduleViewStateSave({ pageNumber: p })} submode={faithfulSubmode} onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }} />
-                      <div className="absolute top-3 right-3 z-40 flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[#1a1a1a]/90 border border-[#2A2E33] backdrop-blur-sm">
-                        <label className="flex items-center gap-2 text-[12px] text-[#9CA3AF] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={showYouTubeOverlay}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              setShowYouTubeOverlay(checked);
-                              if (checked && !youtubeUrl) {
-                                const raw = window.prompt('Pegar enlace de YouTube') || '';
-                                const embed = YouTubeUrlService.toEmbedUrl(raw);
-                                if (embed) setYoutubeUrl(embed);
-                                else { setShowYouTubeOverlay(false); if (raw) alert('Enlace de YouTube no válido'); }
-                              }
-                            }}
-                            className="accent-[#C0392B]"
-                          />
-                          <span>Video de YouTube</span>
-                        </label>
-                      </div>
+                      <HamburgerMenu
+                        submode={faithfulSubmode}
+                        onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }}
+                        showYouTubeOverlay={showYouTubeOverlay}
+                        onToggleYouTube={(checked) => {
+                          setShowYouTubeOverlay(checked);
+                          if (checked && !youtubeUrl) {
+                            const raw = window.prompt('Pegar enlace de YouTube') || '';
+                            const embed = YouTubeUrlService.toEmbedUrl(raw);
+                            if (embed) setYoutubeUrl(embed);
+                            else { setShowYouTubeOverlay(false); if (raw) alert('Enlace de YouTube no válido'); }
+                          }
+                        }}
+                        youtubeUrl={youtubeUrl}
+                        onSetYouTubeUrl={setYoutubeUrl}
+                      />
                     </div>
                   </motion.div>
                 );
