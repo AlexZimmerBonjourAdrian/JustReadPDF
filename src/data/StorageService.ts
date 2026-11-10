@@ -10,6 +10,7 @@ interface StoredDocument {
   scrollY?: number;
   pageNumber?: number;
   palette?: string;
+  faithfulSubmode?: 'compact' | 'pdf' | 'book';
 }
 
 import { LoggerService } from '@/business/services/LoggerService';
@@ -35,7 +36,7 @@ export class StorageService {
     });
   }
 
-  static async saveDocument(file: File, extractedText: string, html?: string, uiState?: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string }): Promise<void> {
+  static async saveDocument(file: File, extractedText: string, html?: string, uiState?: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' }): Promise<void> {
     const end = LoggerService.start('Storage', `saveDocument ${file.name}`);
     try {
       // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
@@ -65,6 +66,7 @@ export class StorageService {
         scrollY: uiState?.scrollY,
         pageNumber: uiState?.pageNumber,
         palette: uiState?.palette,
+        faithfulSubmode: uiState?.faithfulSubmode,
       };
 
       store.add(document);
@@ -88,7 +90,7 @@ export class StorageService {
     }
   }
 
-  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string; viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string } | null> {
+  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string; viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' } | null> {
     LoggerService.debug('Storage', 'loadDocument ...');
     try {
       const db = await this.openDB();
@@ -106,7 +108,7 @@ export class StorageService {
             });
             db.close();
             LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars, html ${latestDoc.html?.length ?? 0})`);
-            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html, viewMode: latestDoc.viewMode, scrollY: latestDoc.scrollY, pageNumber: latestDoc.pageNumber, palette: latestDoc.palette });
+            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html, viewMode: latestDoc.viewMode, scrollY: latestDoc.scrollY, pageNumber: latestDoc.pageNumber, palette: latestDoc.palette, faithfulSubmode: latestDoc.faithfulSubmode });
           } else {
             db.close();
             LoggerService.debug('Storage', 'loadDocument -> null (sin docs)');
@@ -124,7 +126,7 @@ export class StorageService {
     }
   }
 
-  static async saveViewState(patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string }): Promise<void> {
+  static async saveViewState(patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' }): Promise<void> {
     try {
       const db = await this.openDB();
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
@@ -142,6 +144,7 @@ export class StorageService {
               scrollY: patch.scrollY ?? latest.scrollY,
               pageNumber: patch.pageNumber ?? latest.pageNumber,
               palette: patch.palette ?? latest.palette,
+              faithfulSubmode: patch.faithfulSubmode ?? latest.faithfulSubmode,
             };
             const putReq = store.put(updated);
             putReq.onsuccess = () => resolve();

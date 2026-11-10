@@ -5,10 +5,11 @@ import { LoggerService } from '@/business/services/LoggerService';
 
 interface FaithfulEpubViewerProps {
   file: File;
+  submode?: 'compact' | 'pdf' | 'book';
 }
 
 // View fiel EPUB: epubjs con flow scrolled-doc, TOC y estilos originales
-export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
+export default function FaithfulEpubViewer({ file, submode = 'compact' }: FaithfulEpubViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string>('');
 
@@ -26,6 +27,7 @@ export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
           flow: 'scrolled-doc',
           width: '100%',
           height: '100%',
+          spread: submode === 'book' ? 'always' : 'none',
         });
         rendition.themes.default({
           body: { 'background': '#fff !important', 'color': '#111 !important', 'font-family': 'Georgia, serif !important', 'padding': '16px 20px !important' },
@@ -44,7 +46,7 @@ export default function FaithfulEpubViewer({ file }: FaithfulEpubViewerProps) {
       cancelled = true;
       try { book?.destroy(); } catch { /* noop */ }
     };
-  }, [file]);
+  }, [file, submode]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f]">

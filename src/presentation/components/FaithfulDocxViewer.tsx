@@ -5,10 +5,11 @@ import { LoggerService } from '@/business/services/LoggerService';
 
 interface FaithfulDocxViewerProps {
   file: File;
+  submode?: 'compact' | 'pdf' | 'book';
 }
 
 // View fiel DOCX: renderAsync de docx-preview preserva estilos/tablas/headers
-export default function FaithfulDocxViewer({ file }: FaithfulDocxViewerProps) {
+export default function FaithfulDocxViewer({ file, submode = 'compact' }: FaithfulDocxViewerProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -35,6 +36,8 @@ export default function FaithfulDocxViewer({ file }: FaithfulDocxViewerProps) {
           renderEndnotes: true,
         });
         if (!cancelled) {
+          const el = bodyRef.current?.querySelector('.faithful-docx');
+          if (el) el.classList.toggle('book-mode', submode === 'book');
           LoggerService.info('FaithfulDOCX', `render OK ${file.name}`);
           setLoading(false);
         }
@@ -47,14 +50,15 @@ export default function FaithfulDocxViewer({ file }: FaithfulDocxViewerProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, [file]);
+  }, [file, submode]);
 
   return (
     <div className="flex-1 min-h-0 overflow-auto bg-[#0f0f0f] py-6 px-4">
       <style>{`
         .faithful-docx-wrapper { background: transparent !important; padding: 0 !important; }
         .faithful-docx { background: #fff !important; color: #111 !important; width: 100%; max-width: min(100%, 816px); margin: 0 auto; box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
-        @media (max-width: 640px) { .faithful-docx { max-width: 100%; box-shadow: none; } }
+        .faithful-docx.book-mode { column-count: 2; column-gap: 40px; column-rule: 1px solid #e5e7eb; }
+        @media (max-width: 640px) { .faithful-docx { max-width: 100%; box-shadow: none; } .faithful-docx.book-mode { column-count: 1; } }
         .faithful-docx section { box-shadow: none !important; margin-bottom: 16px !important; }
       `}</style>
       {loading && <p className="text-[12px] text-[#6B7280] text-center">Renderizando DOCX…</p>}

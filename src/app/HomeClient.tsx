@@ -25,6 +25,7 @@ export default function HomeClient() {
   const [originalFileName, setOriginalFileName] = useState<string>('');
   const [youtubeUrl, setYoutubeUrl] = useState<string>('');
   const [showYouTubeOverlay, setShowYouTubeOverlay] = useState<boolean>(false);
+  const [faithfulSubmode, setFaithfulSubmode] = useState<'compact' | 'pdf' | 'book'>('compact');
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -43,6 +44,7 @@ export default function HomeClient() {
     setOriginalFileName('');
     setYoutubeUrl('');
     setShowYouTubeOverlay(false);
+    setFaithfulSubmode('compact');
     setInitialScrollY(0);
     setInitialPage(1);
     setViewMode('comfortable');
@@ -87,6 +89,7 @@ export default function HomeClient() {
         setInitialScrollY(stored.scrollY ?? 0);
         setInitialPage(stored.pageNumber ?? 1);
         setPalette((stored.palette as DocPaletteName) ?? 'dark');
+        setFaithfulSubmode(stored.faithfulSubmode === 'pdf' || stored.faithfulSubmode === 'book' ? stored.faithfulSubmode : 'compact');
         
         const strategy = FileProcessorFactory.getStrategy(stored.file);
         if (strategy) {
@@ -263,7 +266,7 @@ export default function HomeClient() {
                     className="flex-1 min-h-0 flex flex-col"
                   >
                     <div className="relative flex-1 min-h-0 flex flex-col">
-                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => scheduleViewStateSave({ pageNumber: p })} />
+                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => scheduleViewStateSave({ pageNumber: p })} submode={faithfulSubmode} onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }} />
                       <div className="absolute top-3 right-3 z-40 flex items-center gap-2 px-3 py-2 rounded-[8px] bg-[#1a1a1a]/90 border border-[#2A2E33] backdrop-blur-sm">
                         <label className="flex items-center gap-2 text-[12px] text-[#9CA3AF] cursor-pointer">
                           <input
