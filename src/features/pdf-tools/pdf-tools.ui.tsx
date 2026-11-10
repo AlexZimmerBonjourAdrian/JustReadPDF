@@ -5,12 +5,12 @@ import { PdfSearchService } from './pdf-tools.service';
 
 interface PdfToolsPanelProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
-  scale: number;
-  onScaleChange: (scale: number) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
   onFit: () => void;
 }
 
-export default function PdfToolsPanel({ containerRef, scale, onScaleChange, onFit }: PdfToolsPanelProps) {
+export default function PdfToolsPanel({ containerRef, zoom, onZoomChange, onFit }: PdfToolsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [matchCount, setMatchCount] = useState(0);
   const [matchIndex, setMatchIndex] = useState(0);
@@ -47,9 +47,9 @@ export default function PdfToolsPanel({ containerRef, scale, onScaleChange, onFi
     <div className="absolute top-14 right-4 z-40 w-[min(90vw,280px)] rounded-[10px] bg-[#1a1a1a]/95 border border-[#2A2E33] shadow-2xl p-3 space-y-3 backdrop-blur-sm">
       <p className="text-[10px] uppercase tracking-[0.12em] text-[#6B7280]">Zoom</p>
       <div className="flex items-center gap-2">
-        <button onClick={() => onScaleChange(Math.max(0.5, +(scale - 0.1).toFixed(2)))} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">−</button>
-        <span className="text-[#9CA3AF] font-mono text-[11px] w-[40px] text-center">{Math.round(scale * 100)}%</span>
-        <button onClick={() => onScaleChange(Math.min(2.5, +(scale + 0.1).toFixed(2)))} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">+</button>
+        <button onClick={() => onZoomChange(Math.max(0.5, +(zoom - 0.1).toFixed(2)))} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">−</button>
+        <span className="text-[#9CA3AF] font-mono text-[11px] w-[40px] text-center">{Math.round(zoom * 100)}%</span>
+        <button onClick={() => onZoomChange(Math.min(2.5, +(zoom + 0.1).toFixed(2)))} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">+</button>
         <button onClick={onFit} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">Ajustar</button>
       </div>
 

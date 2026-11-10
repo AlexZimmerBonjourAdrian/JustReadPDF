@@ -26,8 +26,8 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
   const containerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
-  const [scale, setScale] = useState<number>(1.25);
-  const [userZoom, setUserZoom] = useState<boolean>(false);
+  const [baseScale, setBaseScale] = useState<number>(1.25);
+  const [zoomFactor, setZoomFactor] = useState<number>(1);
   const [fileUrl, setFileUrl] = useState<string>('');
 
 
@@ -52,13 +52,13 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
       const next = isBook
         ? Math.max(0.35, Math.min(2.5, (w - 64) / (pageWidth * 2 + gap)))
         : Math.max(0.5, Math.min(2.5, (w - 32) / pageWidth));
-      if (!userZoom) setScale(next);
+      setBaseScale(next);
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [userZoom, isBook]);
+  }, [isBook]);
 
   useEffect(() => {
     onPageChange?.(pageNumber);
@@ -103,12 +103,13 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
       {submode === 'pdf' && (
         <PdfToolsPanel
           containerRef={containerRef}
-          scale={scale}
-          onScaleChange={(s) => { setUserZoom(true); setScale(s); }}
-          onFit={() => { setUserZoom(false); }}
+          zoom={zoomFactor}
+          onZoomChange={setZoomFactor}
+          onFit={() => setZoomFactor(1)}
         />
       )}
       <div ref={containerRef} className="flex-1 min-h-0 overflow-auto py-6 px-4">
+        <div style={{ transform: `scale(${zoomFactor})`, transformOrigin: 'top center', transition: 'transform 0.15s ease' }}>
         {fileUrl && (
           <Document
             file={fileUrl}
@@ -129,7 +130,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                   <Page
                     key={`page-${p}`}
                     pageNumber={p}
-                    scale={scale}
+                    scale={baseScale}
                     renderTextLayer
                     renderAnnotationLayer={false}
                     loading={<p className="text-[12px] text-[#6B7280]">Cargando página {p}…</p>}
@@ -142,7 +143,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                 <Page
                   key={`left-${pageNumber}`}
                   pageNumber={pageNumber}
-                  scale={scale}
+                  scale={baseScale}
                   renderTextLayer
                   renderAnnotationLayer={false}
                   loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
@@ -151,7 +152,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                   <Page
                     key={`right-${secondPage}`}
                     pageNumber={secondPage}
-                    scale={scale}
+                    scale={baseScale}
                     renderTextLayer
                     renderAnnotationLayer={false}
                     loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
@@ -162,7 +163,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
               <div className="flex justify-center">
                 <Page
                   pageNumber={pageNumber}
-                  scale={scale}
+                  scale={baseScale}
                   renderTextLayer
                   renderAnnotationLayer={false}
                   loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
@@ -171,6 +172,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
             )}
           </Document>
         )}
+        </div>
       </div>
     </div>
   );
