@@ -29,36 +29,43 @@ npm run test:coverage
 - `tailwind` integrado vía PostCSS.
 - Alias de rutas: `@/*` -> `src/*`.
 
-## Estructura actual (por capas)
+## Estructura actual (Vertical Slice)
 ```text
 src/
-  app/                  # Entry points Next.js (View)
-  data/                 # Capa de Datos: persistencia y tipos
-  business/services/    # Capa de Negocio: factories, estrategias, servicios
-  presentation/components/  # Capa Visual: componentes React
+  app/                      # Composición de features (Next.js View)
+  core/                     # Infraestructura compartida (storage, types)
+  features/                 # Vertical slices autocontenidos
+    view-state/             # Estado de vista (UI / negocio / datos)
+    documents/              # Documentos (servicios, estrategias, viewers)
+    youtube/                # YouTube (servicio + UI)
+  data/                     # (legacy, en migración)
+  business/services/        # (legacy, en migración)
+  presentation/components/  # (legacy, en migración)
 ```
 
-## Arquitectura por capas (objetivo MVC)
-El proyecto debe tender a esta separación:
+## Arquitectura Vertical Slice
+Cada feature es autocontenida y posee:
 
-### 1. Capa de Datos (Model)
-- Persistencia local (IndexedDB).
-- Tipos y modelos.
-- Acceso a almacenamiento.
-- Clases clave: `StorageService`, `ViewerData`, `StoredDocument`.
+### 1. Tipos (`*.types.ts`)
+- Modelos y contratos del feature.
 
-### 2. Capa de Negocio (Controller / Services)
-- Validación de archivos.
-- Selección de estrategia.
-- Extracción/procesamiento de texto.
-- Formateo y estructura de documentos.
-- Clases clave: `FileProcessorFactory`, `FileProcessorStrategy`, `*ProcessorStrategy`, `*ViewerService`, `DocumentValidationService`, `DocumentStructureService`.
+### 2. Datos (`*.repository.ts`)
+- Persistencia local (IndexedDB) y acceso a almacenamiento.
 
-### 3. Capa Visual (View)
-- Componentes React.
-- Páginas Next.js.
-- Renderizado HTML/visores.
-- Clases clave: `page.tsx`, `components/*`, `ViewerFactory`, `HtmlViewer`, `FaithfulViewer`.
+### 3. Negocio (`*.service.ts`)
+- Validación, selección de estrategia, extracción/procesamiento, formateo.
+- Clases/servicios estáticos cuando no requieren estado.
+
+### 4. UI (`*.ui.tsx`, `*.hook.ts`)
+- Componentes React y hooks de binding.
+
+### 5. API pública (`index.ts`)
+- Cada feature expone su API pública mediante `index.ts`.
+
+### Regla de dependencias
+- `UI → Service → Repository → Storage`
+- Un slice no importa de otro slice; solo de `core` o de su propio `index.ts`.
+- La app (`src/app`) solo compone features.
 
 ## Formatos de lectura soportados
 - PDF (`.pdf`)
@@ -72,6 +79,8 @@ Validación por extensión y MIME type, con fallback por extensión.
 
 ## Convenciones
 - Servicios como clases estáticas cuando no requieren estado.
+- Cada feature expone su API pública vía `index.ts`.
+- Un slice no importa directamente de otro slice.
 - Estrategias implementan `FileProcessorStrategy`.
 - Los procesadores retornan `ProcessedFile` con `viewer: 'html'`.
 - El texto extraído se valida con `DocumentValidationService` (mínimo 10 caracteres).
