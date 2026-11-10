@@ -16,13 +16,13 @@ import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
 const HamburgerMenu = dynamic(() => import('@/presentation/components/HamburgerMenu'), { ssr: false });
+const YouTubePanel = dynamic(() => import('@/features/youtube').then(m => m.YouTubePanel), { ssr: false });
 const YouTubeTool = dynamic(() => import('@/features/youtube').then(m => m.YouTubeTool), { ssr: false });
 export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [viewerFile, setViewerFile] = useState<File | null>(null);
   const [viewerType, setViewerType] = useState<'html' | null>(null);
-  const [appMode, setAppMode] = useState<'document' | 'youtube'>('document');
   const [originalFileName, setOriginalFileName] = useState<string>('');
   const { state: viewState, update: updateViewState, flush: flushViewState } = useViewState();
   const viewMode = viewState.viewMode;
@@ -182,26 +182,9 @@ export default function HomeClient() {
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex flex-col relative">
 
-      <div className="flex items-center justify-center gap-2 py-2 border-b border-[#2A2E33] bg-[#0f0f0f] shrink-0">
-        <button
-          onClick={() => setAppMode('document')}
-          className={`px-3 py-1.5 rounded-[8px] text-[12px] transition-colors ${appMode === 'document' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
-        >
-          Documentos
-        </button>
-        <button
-          onClick={() => setAppMode('youtube')}
-          className={`px-3 py-1.5 rounded-[8px] text-[12px] transition-colors ${appMode === 'youtube' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}
-        >
-          YouTube
-        </button>
-      </div>
-
       {/* DocumentView - Prioridad máxima */}
       <div className="flex-1 flex flex-col bg-[#0f0f0f]">
-        {appMode === 'youtube' ? (
-          <YouTubeTool />
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="flex-1 flex items-center justify-center py-24">
             <p className="text-[13px] tracking-[0.08em] uppercase text-[#6B7280]">Cargando documento…</p>
           </div>
@@ -254,6 +237,7 @@ export default function HomeClient() {
                         submode={faithfulSubmode}
                         onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }}
                       />
+                      <YouTubePanel />
                     </div>
                   </motion.div>
                 );
