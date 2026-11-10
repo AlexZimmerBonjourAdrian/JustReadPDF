@@ -34,7 +34,7 @@ interface FaithfulViewerProps {
 }
 
 // View fiel: render nativo por formato. TXT/RTF/DOC legacy caen a cómodo (ya es fiel).
-export default function FaithfulViewer({ originalFile, plainText, onSearchNavigate, toolbarActions, initialPage, onPageChange, submode, onSubmodeChange, bookmarkPage, bookmarkSubmode, onToggleBookmark, onGoToBookmark }: FaithfulViewerProps) {
+export default function FaithfulViewer({ originalFile, plainText, onSearchNavigate, toolbarActions, initialPage, onPageChange, submode, onSubmodeChange, bookmarkPage, bookmarkSubmode, bookmarkScrollY, onToggleBookmark, onGoToBookmark }: FaithfulViewerProps) {
   const kind = detectFaithfulKind(originalFile);
   const fileName = originalFile.name;
 
