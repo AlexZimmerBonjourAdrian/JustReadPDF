@@ -40,7 +40,28 @@ export interface SearchHighlightData {
   readonly results: ReadonlyArray<{ line: number; text: string; index: number }>;
 }
 
-export type ViewerType = 'html';
+export type ViewerType = 'html' | 'pdf' | 'docx' | 'epub';
+
+// Formatos con vista "fiel" nativa (render del original, sin conversión a HTML)
+export type FaithfulKind = 'pdf' | 'docx' | 'epub';
+
+export type FaithfulSubmode = 'compact' | 'pdf' | 'book';
+
+// Datos que consume la vista fiel. La Factory resuelve el tipo; la Strategy renderiza.
+export interface FaithfulViewerData {
+  readonly originalFile: File;
+  readonly plainText: string;
+  readonly submode: FaithfulSubmode;
+  readonly onSubmodeChange: (submode: FaithfulSubmode) => void;
+  readonly initialPage?: number;
+  readonly onPageChange?: (page: number) => void;
+  readonly bookmarkPage?: number;
+  readonly bookmarkSubmode?: FaithfulSubmode;
+  readonly bookmarkScrollY?: number;
+  readonly onToggleBookmark?: (position: number) => void;
+  readonly onGoToBookmark?: () => void;
+  readonly onSearchNavigate: (lineNumber: number) => void;
+}
 
 export interface HtmlViewerViewProps {
   readonly displayData: ViewerDisplayData;
@@ -57,9 +78,4 @@ export interface ViewerToolbarViewProps {
   readonly onPaletteChange?: (palette: DocPaletteName) => void;
 }
 
-export interface ViewerFactoryContext {
-  readonly viewerType: ViewerType;
-  readonly mimeType: string;
-  readonly structure?: DocumentStructureMeta;
-  readonly readingOptions?: ViewerReadingOptions;
-}
+

@@ -1,9 +1,10 @@
 import { ReactElement } from 'react';
 import HtmlViewer from '../HtmlViewer';
 import { ViewerStrategy, ViewerProps } from './ViewerStrategy';
+import { ViewerType } from '@/data/ViewerData';
 
 export class HtmlViewerStrategy implements ViewerStrategy {
-  canRender(viewerType: 'html'): boolean {
+  canRender(viewerType: ViewerType): boolean {
     return viewerType === 'html';
   }
 

@@ -13,9 +13,10 @@ import { LoggerService } from '@/business/services/LoggerService';
 import { DocumentValidationService } from '@/features/documents';
 import { DocPaletteName } from '@/business/services/TextFormatterService';
 import EmptyDocumentModal from '@/presentation/components/EmptyDocumentModal';
+import ViewerToolbar from '@/presentation/components/ViewerToolbar';
+import type { ViewerType, FaithfulViewerData } from '@/data/ViewerData';
 import dynamic from 'next/dynamic';
 
-const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
 const HamburgerMenu = dynamic(() => import('@/presentation/components/HamburgerMenu'), { ssr: false });
 const YouTubePanel = dynamic(() => import('@/features/youtube').then(m => m.YouTubePanel), { ssr: false });
 const YouTubeTool = dynamic(() => import('@/features/youtube').then(m => m.YouTubeTool), { ssr: false });
@@ -23,7 +24,7 @@ export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
   const [viewerFile, setViewerFile] = useState<File | null>(null);
-  const [viewerType, setViewerType] = useState<'html' | null>(null);
+  const [viewerType, setViewerType] = useState<ViewerType | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>('');
   const { state: viewState, update: updateViewState, flush: flushViewState } = useViewState();
   const viewMode = viewState.viewMode;
@@ -208,7 +209,9 @@ export default function HomeClient() {
         ) : (
           <AnimatePresence mode="wait">
             {viewerFile && viewerType ? (() => {
-              const strategy = ViewerFactory.getStrategy(viewerType);
+              const faithfulFile = viewMode === 'faithful' && pdfFile ? pdfFile : null;
+              const faithfulKind = faithfulFile ? ViewerFactory.resolveViewerType(faithfulFile) : null;
+              const strategy = ViewerFactory.getStrategy(faithfulKind ?? 'html');
               if (!strategy) return null;
               const displayData = {
                 fileData: { file: viewerFile, fileName: viewerFile.name, mimeType: viewerFile.type, originalFileName },
@@ -227,39 +230,49 @@ export default function HomeClient() {
                   <button onClick={handleClearStorage} className="px-3 py-[6px] bg-[#25282B] border border-[#2A2E33] text-[#9CA3AF] rounded-[8px] hover:border-[#3A3E44] hover:text-white transition-colors text-[12px] shrink-0">Limpiar</button>
                 </>
               );
-              if (viewMode === 'faithful' && pdfFile) {
-                return (
-                  <motion.div
-                    key="faithful-viewer"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="flex-1 min-h-0 flex flex-col"
-                  >
-                    <div className="relative flex-1 min-h-0 flex flex-col">
-                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={forcedPdfPage ?? initialPage} onPageChange={(p: number) => { updateViewState({ pageNumber: p }); setForcedPdfPage(null); }} submode={faithfulSubmode} onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }} bookmarkPage={bookmark?.page} bookmarkSubmode={bookmark?.submode} bookmarkScrollY={bookmark?.scrollY} onToggleBookmark={(pos: number) => { const isPageMode = faithfulSubmode === 'pdf' || faithfulSubmode === 'compact' || !faithfulSubmode; const bm: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' } = { submode: faithfulSubmode, ...(isPageMode ? { page: pos } : { scrollY: pos }) }; setBookmarkState(bm); updateViewState({ bookmark: bm }); }} onGoToBookmark={() => { if (bookmark?.page) { setForcedPdfPage(bookmark.page); updateViewState({ pageNumber: bookmark.page }); } }} />
-                      <HamburgerMenu
-                        submode={faithfulSubmode}
-                        onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }}
-                      />
-                      <YouTubePanel />
-                    </div>
-                  </motion.div>
-                );
-              }
-              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: (p: DocPaletteName) => { updateViewState({ palette: p }); }, initialScrollY, onScroll: (y: number) => updateViewState({ scrollY: y }) } as ViewerProps;
+              const faithfulData: FaithfulViewerData | undefined = faithfulFile && faithfulKind ? {
+                originalFile: faithfulFile,
+                plainText: extractedText,
+                submode: faithfulSubmode,
+                onSubmodeChange: (m) => { updateViewState({ faithfulSubmode: m }); },
+                initialPage: forcedPdfPage ?? initialPage,
+                onPageChange: (p: number) => { updateViewState({ pageNumber: p }); setForcedPdfPage(null); },
+                bookmarkPage: bookmark?.page,
+                bookmarkSubmode: bookmark?.submode,
+                bookmarkScrollY: bookmark?.scrollY,
+                onToggleBookmark: (pos: number) => { const isPageMode = faithfulSubmode === 'pdf' || faithfulSubmode === 'compact' || !faithfulSubmode; const bm: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' } = { submode: faithfulSubmode, ...(isPageMode ? { page: pos } : { scrollY: pos }) }; setBookmarkState(bm); updateViewState({ bookmark: bm }); },
+                onGoToBookmark: () => { if (bookmark?.page) { setForcedPdfPage(bookmark.page); updateViewState({ pageNumber: bookmark.page }); } },
+                onSearchNavigate: () => {},
+              } : undefined;
+              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: (p: DocPaletteName) => { updateViewState({ palette: p }); }, initialScrollY, onScroll: (y: number) => updateViewState({ scrollY: y }), faithful: faithfulData } as ViewerProps;
+              const viewerKey = faithfulFile ? `faithful-${faithfulKind ?? 'unsupported'}` : viewerType;
               
               return (
                 <motion.div
-                  key={`${viewerType}-viewer`}
+                  key={`${viewerKey}-viewer`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="flex-1 min-h-0 flex flex-col"
                 >
-                  {strategy.render(viewerProps)}
+                  {faithfulFile ? (
+                    <div className="relative flex-1 min-h-0 flex flex-col">
+                      {faithfulKind ? strategy.render(viewerProps) : (
+                        <div className="flex-1 min-h-0 flex flex-col bg-[#0f0f0f]">
+                          <ViewerToolbar fileName={faithfulFile.name} plainText={extractedText} onSearchNavigate={() => {}} actions={toolbarActions} />
+                          <div className="flex-1 flex items-center justify-center">
+                            <p className="text-[13px] text-[#9CA3AF]">Vista fiel no disponible para este formato — usa modo cómodo.</p>
+                          </div>
+                        </div>
+                      )}
+                      <HamburgerMenu
+                        submode={faithfulSubmode}
+                        onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }}
+                      />
+                      <YouTubePanel />
+                    </div>
+                  ) : strategy.render(viewerProps)}
                 </motion.div>
               );
             })() : (

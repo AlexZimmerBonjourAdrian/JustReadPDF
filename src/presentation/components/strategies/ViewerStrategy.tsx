@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { ViewerDisplayData } from '@/data/ViewerData';
+import { ViewerDisplayData, ViewerType, FaithfulViewerData } from '@/data/ViewerData';
 import type { DocPaletteName } from '@/business/services/TextFormatterService';
 
 export interface ViewerProps {
@@ -9,9 +9,11 @@ export interface ViewerProps {
   onPaletteChange?: (palette: DocPaletteName) => void;
   initialScrollY?: number;
   onScroll?: (y: number) => void;
+  // Presente solo cuando la Factory resolvió una vista fiel (pdf/docx/epub)
+  faithful?: FaithfulViewerData;
 }
 
 export interface ViewerStrategy {
-  canRender(viewerType: 'html'): boolean;
+  canRender(viewerType: ViewerType): boolean;
   render(props: ViewerProps): ReactElement;
 }

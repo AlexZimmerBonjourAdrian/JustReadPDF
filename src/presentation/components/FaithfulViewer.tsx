@@ -2,53 +2,28 @@
 
 import dynamic from 'next/dynamic';
 import ViewerToolbar from './ViewerToolbar';
+import type { FaithfulKind, FaithfulViewerData } from '@/data/ViewerData';
 
 const FaithfulPdfViewer = dynamic(() => import('./FaithfulPdfViewer'), { ssr: false });
 const FaithfulDocxViewer = dynamic(() => import('./FaithfulDocxViewer'), { ssr: false });
 const FaithfulEpubViewer = dynamic(() => import('./FaithfulEpubViewer'), { ssr: false });
 
-export type FaithfulKind = 'pdf' | 'docx' | 'epub' | 'unsupported';
-
-export function detectFaithfulKind(file: File): FaithfulKind {
-  const name = file.name.toLowerCase();
-  if (file.type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
-  if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || name.endsWith('.docx')) return 'docx';
-  if (file.type === 'application/epub+zip' || name.endsWith('.epub')) return 'epub';
-  return 'unsupported';
-}
-
 interface FaithfulViewerProps {
-  originalFile: File;
-  plainText: string;
-  onSearchNavigate: (lineNumber: number) => void;
+  kind: FaithfulKind;
+  data: FaithfulViewerData;
   toolbarActions?: React.ReactNode;
-  initialPage?: number;
-  onPageChange?: (page: number) => void;
-  submode?: 'compact' | 'pdf' | 'book';
-  onSubmodeChange?: (submode: 'compact' | 'pdf' | 'book') => void;
-  bookmarkPage?: number;
-  bookmarkSubmode?: 'compact' | 'pdf' | 'book';
-  bookmarkScrollY?: number;
-  onToggleBookmark?: (page: number) => void;
-  onGoToBookmark?: () => void;
 }
 
-// View fiel: render nativo por formato. TXT/RTF/DOC legacy caen a cómodo (ya es fiel).
-export default function FaithfulViewer({ originalFile, plainText, onSearchNavigate, toolbarActions, initialPage, onPageChange, submode, onSubmodeChange, bookmarkPage, bookmarkSubmode, bookmarkScrollY, onToggleBookmark, onGoToBookmark }: FaithfulViewerProps) {
-  const kind = detectFaithfulKind(originalFile);
-  const fileName = originalFile.name;
+// Shell de la vista fiel: toolbar común + render nativo del formato ya resuelto por ViewerFactory.
+export default function FaithfulViewer({ kind, data, toolbarActions }: FaithfulViewerProps) {
+  const { originalFile, plainText, submode, onSubmodeChange, initialPage, onPageChange, bookmarkPage, bookmarkSubmode, bookmarkScrollY, onToggleBookmark, onGoToBookmark, onSearchNavigate } = data;
 
   return (
     <div className="flex-1 min-h-0 bg-[#0f0f0f] overflow-hidden flex flex-col">
-      <ViewerToolbar fileName={fileName} plainText={kind === 'pdf' ? '' : plainText} onSearchNavigate={onSearchNavigate} actions={toolbarActions} />
+      <ViewerToolbar fileName={originalFile.name} plainText={kind === 'pdf' ? '' : plainText} onSearchNavigate={onSearchNavigate} actions={toolbarActions} />
       {kind === 'pdf' && <FaithfulPdfViewer file={originalFile} initialPage={initialPage} onPageChange={onPageChange} submode={submode} onSubmodeChange={onSubmodeChange} bookmarkPage={bookmarkPage} bookmarkSubmode={bookmarkSubmode} onToggleBookmark={onToggleBookmark} onGoToBookmark={onGoToBookmark} />}
-      {kind === 'docx' && <FaithfulDocxViewer file={originalFile} submode={submode} bookmarkScrollY={bookmarkScrollY} onToggleBookmark={(y: number) => onToggleBookmark?.(y)} />}
-      {kind === 'epub' && <FaithfulEpubViewer file={originalFile} submode={submode} bookmarkScrollY={bookmarkScrollY} onToggleBookmark={(y: number) => onToggleBookmark?.(y)} />}
-      {kind === 'unsupported' && (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-[13px] text-[#9CA3AF]">Vista fiel no disponible para este formato — usa modo cómodo.</p>
-        </div>
-      )}
+      {kind === 'docx' && <FaithfulDocxViewer file={originalFile} submode={submode} bookmarkScrollY={bookmarkScrollY} onToggleBookmark={onToggleBookmark} />}
+      {kind === 'epub' && <FaithfulEpubViewer file={originalFile} submode={submode} bookmarkScrollY={bookmarkScrollY} onToggleBookmark={onToggleBookmark} />}
     </div>
   );
 }

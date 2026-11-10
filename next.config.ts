@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/pdfs/(.*)',
+        source: '/Books/(.*)',
         headers: [
           {
             key: 'Cache-Control',
