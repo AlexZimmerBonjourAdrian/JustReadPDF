@@ -85,7 +85,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
     if (bookmarkSubmode === 'book') {
       return bookmarkPage === p || bookmarkPage === p + 1;
     }
-    return bookmarkPage === p && bookmarkSubmode !== 'book';
+    return bookmarkPage === p;
   };
 
   const pageStyle = {
