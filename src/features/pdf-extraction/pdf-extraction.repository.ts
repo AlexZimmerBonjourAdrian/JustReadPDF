@@ -49,7 +49,7 @@ export const PdfExtractionRepository = {
         canvas.width = viewport.width;
         canvas.height = viewport.height;
 
-        await page.render({ canvasContext: context, viewport }).promise;
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
 
         const worker = await createWorker('spa');
         const { data } = await worker.recognize(canvas);
