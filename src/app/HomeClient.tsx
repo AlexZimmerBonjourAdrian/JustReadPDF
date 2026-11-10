@@ -1,22 +1,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useViewState } from '@/features/view-state';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StorageService } from '@/data/StorageService';
-import { FileProcessorFactory } from '@/business/services/FileProcessorFactory';
-import { ProcessedFile } from '@/business/services/FileProcessorStrategy';
-import { ViewerFactory } from '@/presentation/components/ViewerFactory';
+import { FileProcessorFactory, ProcessedFile } from '@/features/documents';
+import { ViewerFactory } from '@/features/documents';
 import { ViewerProps } from '@/presentation/components/strategies/ViewerStrategy';
 import { LoggerService } from '@/business/services/LoggerService';
-import { DocumentValidationService } from '@/business/services/DocumentValidationService';
+import { DocumentValidationService } from '@/features/documents';
 import { DocPaletteName } from '@/business/services/TextFormatterService';
 import EmptyDocumentModal from '@/presentation/components/EmptyDocumentModal';
 import dynamic from 'next/dynamic';
 
 const FaithfulViewer = dynamic(() => import('@/presentation/components/FaithfulViewer'), { ssr: false });
 const HamburgerMenu = dynamic(() => import('@/presentation/components/HamburgerMenu'), { ssr: false });
-const YouTubeTool = dynamic(() => import('@/presentation/components/YouTubeTool'), { ssr: false });
+const YouTubeTool = dynamic(() => import('@/features/youtube').then(m => m.YouTubeTool), { ssr: false });
 export default function HomeClient() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [extractedText, setExtractedText] = useState<string>('');
@@ -24,14 +24,16 @@ export default function HomeClient() {
   const [viewerType, setViewerType] = useState<'html' | null>(null);
   const [appMode, setAppMode] = useState<'document' | 'youtube'>('document');
   const [originalFileName, setOriginalFileName] = useState<string>('');
-  const [faithfulSubmode, setFaithfulSubmode] = useState<'compact' | 'pdf' | 'book'>('compact');
+  const { state: viewState, update: updateViewState, flush: flushViewState } = useViewState();
+  const viewMode = viewState.viewMode;
+  const palette = viewState.palette;
+  const initialScrollY = viewState.scrollY;
+  const initialPage = viewState.pageNumber;
+  const faithfulSubmode = viewState.faithfulSubmode;
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
-  const [viewMode, setViewMode] = useState<'comfortable' | 'faithful'>('comfortable');
-  const [palette, setPalette] = useState<DocPaletteName>('dark');
-  const [initialScrollY, setInitialScrollY] = useState<number>(0);
-  const [initialPage, setInitialPage] = useState<number>(1);
+
   const saveViewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [emptyDoc, setEmptyDoc] = useState<{ fileName: string; detail: string } | null>(null);
 
@@ -42,22 +44,10 @@ export default function HomeClient() {
     setViewerType(null);
     setOriginalFileName('');
     setFaithfulSubmode('compact');
-    setInitialScrollY(0);
-    setInitialPage(1);
-    setViewMode('comfortable');
+    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable' });
   };
 
-  const scheduleViewStateSave = (patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: DocPaletteName }) => {
-    if (saveViewTimer.current) clearTimeout(saveViewTimer.current);
-    saveViewTimer.current = setTimeout(() => {
-      StorageService.saveViewState({
-        viewMode: patch.viewMode,
-        scrollY: patch.scrollY,
-        pageNumber: patch.pageNumber,
-        palette: patch.palette,
-      });
-    }, 400);
-  };
+
 
   useEffect(() => {
     loadStoredDocument();
@@ -65,10 +55,7 @@ export default function HomeClient() {
 
   useEffect(() => {
     const flush = () => {
-      if (saveViewTimer.current) {
-        clearTimeout(saveViewTimer.current);
-        saveViewTimer.current = null;
-      }
+      flushViewState();
     };
     window.addEventListener('beforeunload', flush);
     return () => window.removeEventListener('beforeunload', flush);
@@ -82,11 +69,13 @@ export default function HomeClient() {
         LoggerService.info('App', `stored encontrado: ${stored.file.name}`);
         setPdfFile(stored.file);
         setExtractedText(stored.extractedText);
-        setViewMode(stored.viewMode === 'faithful' ? 'faithful' : 'comfortable');
-        setInitialScrollY(stored.scrollY ?? 0);
-        setInitialPage(stored.pageNumber ?? 1);
-        setPalette((stored.palette as DocPaletteName) ?? 'dark');
-        setFaithfulSubmode(stored.faithfulSubmode === 'pdf' || stored.faithfulSubmode === 'book' ? stored.faithfulSubmode : 'compact');
+        updateViewState({
+          viewMode: stored.viewMode === 'faithful' ? 'faithful' : 'comfortable',
+          scrollY: stored.scrollY ?? 0,
+          pageNumber: stored.pageNumber ?? 1,
+          palette: (stored.palette as DocPaletteName) ?? 'dark',
+          faithfulSubmode: stored.faithfulSubmode === 'pdf' || stored.faithfulSubmode === 'book' ? stored.faithfulSubmode : 'compact',
+        });
         
         const strategy = FileProcessorFactory.getStrategy(stored.file);
         if (strategy) {
@@ -167,7 +156,7 @@ export default function HomeClient() {
 
       // Save to IndexedDB (incluye el HTML "cómodo" para preservar formato al recargar)
       const formattedHtml = await processed.file.text();
-      await StorageService.saveDocument(file, processed.text, formattedHtml, { viewMode: 'comfortable', scrollY: 0, pageNumber: 1, palette });
+      await StorageService.saveDocument(file, processed.text, formattedHtml, { viewMode: 'comfortable', scrollY: 0, pageNumber: 1, palette, faithfulSubmode: 'compact' });
     } catch (error) {
       LoggerService.error('App', 'handleFileUpload falló:', error);
       resetViewer();
@@ -240,8 +229,8 @@ export default function HomeClient() {
               const toolbarActions = (
                 <>
                   <div className="flex items-center rounded-[8px] overflow-hidden border border-[#2A2E33] shrink-0">
-                    <button onClick={() => { setViewMode('comfortable'); scheduleViewStateSave({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
-                    <button onClick={() => { setViewMode('faithful'); scheduleViewStateSave({ viewMode: 'faithful' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
+                    <button onClick={() => { updateViewState({ viewMode: 'comfortable' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'comfortable' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Cómodo</button>
+                    <button onClick={() => { updateViewState({ viewMode: 'faithful' }); }} className={`px-2.5 py-[6px] text-[12px] transition-colors ${viewMode === 'faithful' ? 'bg-white text-[#0f0f0f] font-medium' : 'bg-[#25282B] text-[#9CA3AF] hover:text-white'}`}>Fiel</button>
                   </div>
                   <label className="px-3 py-[6px] bg-[#C0392B] text-white rounded-[8px] hover:bg-[#A93226] transition-colors cursor-pointer text-[12px] font-medium shrink-0">
                     <span>Cargar otro</span>
@@ -261,16 +250,16 @@ export default function HomeClient() {
                     className="flex-1 min-h-0 flex flex-col"
                   >
                     <div className="relative flex-1 min-h-0 flex flex-col">
-                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => scheduleViewStateSave({ pageNumber: p })} submode={faithfulSubmode} onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }} />
+                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => updateViewState({ pageNumber: p })} submode={faithfulSubmode} onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }} />
                       <HamburgerMenu
                         submode={faithfulSubmode}
-                        onSubmodeChange={(m) => { setFaithfulSubmode(m); scheduleViewStateSave({ faithfulSubmode: m }); }}
+                        onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }}
                       />
                     </div>
                   </motion.div>
                 );
               }
-              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: (p: DocPaletteName) => { setPalette(p); scheduleViewStateSave({ palette: p }); }, initialScrollY, onScroll: (y: number) => scheduleViewStateSave({ scrollY: y }) } as ViewerProps;
+              const viewerProps = { displayData, toolbarActions, palette, onPaletteChange: (p: DocPaletteName) => { updateViewState({ palette: p }); }, initialScrollY, onScroll: (y: number) => updateViewState({ scrollY: y }) } as ViewerProps;
               
               return (
                 <motion.div
