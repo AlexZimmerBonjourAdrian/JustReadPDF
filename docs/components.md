@@ -1,59 +1,42 @@
 # Componentes
 
 ## Capa visual
-- `page.tsx`: Home y orquestación.
-- `EmptyDocumentModal`: modal de documento sin texto.
-- `HtmlViewer`: visualizador HTML.
-- `FaithfulViewer`, `FaithfulPdfViewer`, `FaithfulDocxViewer`, `FaithfulEpubViewer`: vista fiel.
-- `ViewerFactory`: selección de viewer.
-- `SearchBar`: búsqueda.
-- `Header`, `Footer`: layout.
-```
 
-Now final response should summarize all changes. Also mention version legend. Let's ensure Home version legend added. Yes.
+### Home
+- `page.tsx`: página de bienvenida y orquestación de features.
+- `layout.tsx`: layout raíz con JSON-LD estructurado.
 
-Need maybe update README? Not asked. Could leave.
+### Visores fieles
+- `HtmlViewer`: visualizador HTML cómodo para documentos convertidos.
+- `FaithfulViewer`: contenedor de vista fiel por tipo de archivo.
+- `FaithfulPdfViewer`: visor de PDF (compacto / pdf-scroll / book).
+- `FaithfulDocxViewer`: visor de DOCX.
+- `FaithfulEpubViewer`: visor de EPUB.
+- `ViewerToolbar`: barra superior de controles (documento, búsqueda, paleta, acciones).
 
-Let's provide final in Spanish.<|end|><|start|>Assistant to=final<|message|>Listo. Implementé los cambios principales:
+### Herramientas flotantes
+- `HamburgerMenu`: menú flotante de submodos de lectura (Compacto / PDF / Book).
+- `PdfToolsPanel`: panel flotante de herramientas PDF (zoom, búsqueda).
+- `YouTubePanel`: panel flotante ajustable para previsualizar videos de YouTube.
+- `YouTubeTool`: pantalla independiente para cargar y ver enlaces de YouTube.
 
-### 1. Leyenda de versión en Home
-En `src/app/page.tsx` se agregó:
-```text
-Versión 1.0.0
-```
-en la pantalla de bienvenida.
+### Utilidades
+- `ViewerFactory`: selección de viewer por tipo de archivo.
+- `SearchBar`: barra de búsqueda de texto en documentos.
+- `EmptyDocumentModal`: modal cuando el documento no tiene texto extraíble.
 
-### 2. `AGENT.md`
-Creado en la raíz con:
-- stack y scripts;
-- configuración del proyecto;
-- arquitectura por capas;
-- formatos soportados;
-- convenciones;
-- versionado;
-- reglas para agentes.
+## Props compartidas
 
-### 3. Documentación por temas
-Creada carpeta `docs/` con archivos separados:
-- `architecture.md`
-- `data-layer.md`
-- `business-layer.md`
-- `view-layer.md`
-- `supported-formats.md`
-- `mvc-migration-plan.md`
-- `configuration.md`
-- `versioning.md`
-- `services.md`
-- `components.md`
+### `ViewerProps`
+- `displayData`: datos de archivo y contenido.
+- `toolbarActions`: acciones de toolbar inyectadas.
+- `palette`: paleta de color del documento.
+- `onPaletteChange`: callback de cambio de paleta.
+- `initialScrollY`: posición de scroll inicial.
+- `onScroll`: callback de desplazamiento.
 
-### 4. Separación en capas (MVC)
-Se reorganizó el código en capas reales:
-- **Datos:** `src/data/` (`StorageService`, `ViewerData`)
-- **Negocio:** `src/business/services/` (factories, estrategias, servicios de procesamiento)
-- **Visual:** `src/presentation/components/` (componentes React)
-
-También se actualizaron los imports en `page.tsx` y demás archivos para usar las nuevas rutas (`@/data/...`, `@/business/...`, `@/presentation/...`), y se eliminó la carpeta antigua `src/types`.
-
-### Resultado
-La app queda mejor organizada por capas, con documentación centralizada y una leyenda de versión visible en Home. Los formatos de lectura siguen siendo: **PDF, TXT, RTF, DOC, DOCX y EPUB**. Si quieres, el siguiente paso natural es mover más lógica de `page.tsx` a un controlador/servicio de aplicación para completar el patrón MVC.return;<|end|><|start|>tool_calls_section_begin|>|assistant to=shell<|channel|>analysis <|constrain|>xml<|message|><rfl:parameter name="command">
-cd C:\JustReadPDF && git diff --stat
+### `FaithfulViewerProps`
+- `submode`: `'compact' | 'pdf' | 'book'`.
+- `onSubmodeChange`: callback de cambio de submodo.
+- `initialPage`: página inicial del PDF.
+- `onPageChange`: callback de cambio de página.

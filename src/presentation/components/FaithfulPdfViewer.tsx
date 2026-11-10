@@ -6,6 +6,7 @@ import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import { LoggerService } from '@/business/services/LoggerService';
 import { PdfToolsPanel } from '@/features/pdf-tools';
+import type { Bookmark } from '@/features/bookmark';
 
 if (typeof window !== 'undefined') {
   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
@@ -19,10 +20,14 @@ interface FaithfulPdfViewerProps {
   onPageChange?: (page: number) => void;
   submode?: FaithfulSubmode;
   onSubmodeChange?: (submode: FaithfulSubmode) => void;
+  bookmarkPage?: number;
+  bookmarkSubmode?: FaithfulSubmode;
+  onToggleBookmark?: (page: number) => void;
+  onGoToBookmark?: () => void;
 }
 
 // View fiel PDF: render vectorial canvas vía PDF.js, sin extracción a texto
-export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange, submode = 'compact', onSubmodeChange }: FaithfulPdfViewerProps) {
+export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange, submode = 'compact', onSubmodeChange, bookmarkPage, bookmarkSubmode, onToggleBookmark, onGoToBookmark }: FaithfulPdfViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -89,6 +94,15 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
             <span className="w-px h-4 bg-[#2A2E33] mx-1" />
           </>
         )}
+        {bookmarkPage && onGoToBookmark && (
+          <button
+            onClick={onGoToBookmark}
+            className="px-2 py-1 rounded-[6px] bg-[#5B21B6] text-white text-[11px] font-medium hover:bg-[#4C1D95]"
+            title="Ir al marcador"
+          >
+            🔖 Ir al marcador
+          </button>
+        )}
 
       </div>
       {submode === 'pdf' && (
@@ -116,49 +130,98 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
             error={<p className="text-[12px] text-[#C0392B]">No se pudo renderizar el PDF.</p>}
           >
             {submode === 'pdf' ? (
-              <div className="flex flex-col items-center gap-6 w-full">
-                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => (
-                  <Page
-                    key={`page-${p}`}
-                    pageNumber={p}
-                    scale={baseScale}
-                    renderTextLayer
-                    renderAnnotationLayer={false}
-                    loading={<p className="text-[12px] text-[#6B7280]">Cargando página {p}…</p>}
-                    className="shadow-lg"
-                  />
-                ))}
+              <div className="flex flex-col items-center gap-6 w-full relative">
+                {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => {
+                  const isMarked = bookmarkPage === p && bookmarkSubmode === 'pdf';
+                  return (
+                    <div key={`page-${p}`} className="relative w-full max-w-[612px]">
+                      <Page
+                        pageNumber={p}
+                        scale={baseScale}
+                        renderTextLayer
+                        renderAnnotationLayer={false}
+                        loading={<p className="text-[12px] text-[#6B7280]">Cargando página {p}…</p>}
+                        className={`shadow-lg ${isMarked ? 'border-4 border-purple-600 rounded-[4px] shadow-[0_0_20px_rgba(168,85,247,0.5)]' : ''}`}
+                      />
+                      {onToggleBookmark && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleBookmark(p);
+                          }}
+                          className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isMarked ? 'bg-purple-600 text-white' : 'bg-[#1a1a1a]/80 border border-[#2A2E33] text-[#9CA3AF]'}`} 
+                          title={isMarked ? 'Quitar marcador' : 'Marcar página'}
+                        >
+                          {isMarked ? '✔' : '🔖'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ) : isBook ? (
-              <div className={`flex gap-6 ${isBook ? 'min-w-max mx-auto' : ''} justify-center`}>
-                <Page
-                  key={`left-${pageNumber}`}
-                  pageNumber={pageNumber}
-                  scale={baseScale}
-                  renderTextLayer
-                  renderAnnotationLayer={false}
-                  loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
-                />
-                {secondPage > pageNumber && (
+              <div className={`flex gap-6 ${isBook ? 'min-w-max mx-auto' : ''} justify-center relative`}>
+                <div className={`relative ${bookmarkPage === pageNumber && bookmarkSubmode === 'book' ? '' : ''}`}>
                   <Page
-                    key={`right-${secondPage}`}
-                    pageNumber={secondPage}
+                    key={`left-${pageNumber}`}
+                    pageNumber={pageNumber}
                     scale={baseScale}
                     renderTextLayer
                     renderAnnotationLayer={false}
                     loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
+                    className={`shadow-lg ${bookmarkPage === pageNumber && bookmarkSubmode === 'book' ? 'border-4 border-purple-600 rounded-[4px] shadow-[0_0_20px_rgba(168,85,247,0.5)]' : ''}`}
                   />
+                </div>
+                {secondPage > pageNumber && (
+                  <div className="relative">
+                    <Page
+                      key={`right-${secondPage}`}
+                      pageNumber={secondPage}
+                      scale={baseScale}
+                      renderTextLayer
+                      renderAnnotationLayer={false}
+                      loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
+                      className={`shadow-lg ${bookmarkPage === secondPage && bookmarkSubmode === 'book' ? 'border-4 border-purple-600 rounded-[4px] shadow-[0_0_20px_rgba(168,85,247,0.5)]' : ''}`}
+                    />
+                  </div>
+                )}
+                {onToggleBookmark && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleBookmark(pageNumber);
+                    }}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all bg-purple-600 text-white"
+                    title="Quitar marcador"
+                  >
+                    ✔
+                  </button>
                 )}
               </div>
             ) : (
-              <div className="flex justify-center">
-                <Page
-                  pageNumber={pageNumber}
-                  scale={baseScale}
-                  renderTextLayer
-                  renderAnnotationLayer={false}
-                  loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
-                />
+              <div className="flex justify-center relative">
+                <div className="relative">
+                  <Page
+                    pageNumber={pageNumber}
+                    scale={baseScale}
+                    renderTextLayer
+                    renderAnnotationLayer={false}
+                    loading={<p className="text-[12px] text-[#6B7280]">Cargando página…</p>}
+                    className={`shadow-lg ${bookmarkPage === pageNumber && bookmarkSubmode === 'compact' ? 'border-4 border-purple-600 rounded-[4px] shadow-[0_0_20px_rgba(168,85,247,0.5)]' : ''}`}
+                  />
+                </div>
+                {onToggleBookmark && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleBookmark(pageNumber);
+                    }}
+                    className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full flex items-center justify-center transition-all ${bookmarkPage === pageNumber && bookmarkSubmode === 'compact' ? 'bg-purple-600 text-white' : 'bg-[#1a1a1a]/80 border border-[#2A2E33] text-[#9CA3AF]'}`}
+                    title={bookmarkPage === pageNumber && bookmarkSubmode === 'compact' ? 'Quitar marcador' : 'Marcar página'}
+                  >
+                    {bookmarkPage === pageNumber && bookmarkSubmode === 'compact' ? '✔' : '🔖'}
+                  </button>
+                )}
               </div>
             )}
           </Document>

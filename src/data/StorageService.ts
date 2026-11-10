@@ -11,6 +11,7 @@ interface StoredDocument {
   pageNumber?: number;
   palette?: string;
   faithfulSubmode?: 'compact' | 'pdf' | 'book';
+  bookmark?: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' };
 }
 
 import { LoggerService } from '@/business/services/LoggerService';
@@ -36,7 +37,7 @@ export class StorageService {
     });
   }
 
-  static async saveDocument(file: File, extractedText: string, html?: string, uiState?: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' }): Promise<void> {
+  static async saveDocument(file: File, extractedText: string, html?: string, uiState?: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book'; bookmark?: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' } }): Promise<void> {
     const end = LoggerService.start('Storage', `saveDocument ${file.name}`);
     try {
       // Convertir archivo a ArrayBuffer ANTES de iniciar la transacción
@@ -67,6 +68,7 @@ export class StorageService {
         pageNumber: uiState?.pageNumber,
         palette: uiState?.palette,
         faithfulSubmode: uiState?.faithfulSubmode,
+        bookmark: uiState?.bookmark,
       };
 
       store.add(document);
@@ -90,7 +92,7 @@ export class StorageService {
     }
   }
 
-  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string; viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' } | null> {
+  static async loadDocument(): Promise<{ file: File; extractedText: string; html?: string; viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book'; bookmark?: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' } } | null> {
     LoggerService.debug('Storage', 'loadDocument ...');
     try {
       const db = await this.openDB();
@@ -108,7 +110,7 @@ export class StorageService {
             });
             db.close();
             LoggerService.info('Storage', `loaded ${latestDoc.fileName} (texto ${latestDoc.extractedText.length} chars, html ${latestDoc.html?.length ?? 0})`);
-            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html, viewMode: latestDoc.viewMode, scrollY: latestDoc.scrollY, pageNumber: latestDoc.pageNumber, palette: latestDoc.palette, faithfulSubmode: latestDoc.faithfulSubmode });
+            resolve({ file, extractedText: latestDoc.extractedText, html: latestDoc.html, viewMode: latestDoc.viewMode, scrollY: latestDoc.scrollY, pageNumber: latestDoc.pageNumber, palette: latestDoc.palette, faithfulSubmode: latestDoc.faithfulSubmode, bookmark: latestDoc.bookmark });
           } else {
             db.close();
             LoggerService.debug('Storage', 'loadDocument -> null (sin docs)');
@@ -126,7 +128,7 @@ export class StorageService {
     }
   }
 
-  static async saveViewState(patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book' }): Promise<void> {
+  static async saveViewState(patch: { viewMode?: 'comfortable' | 'faithful'; scrollY?: number; pageNumber?: number; palette?: string; faithfulSubmode?: 'compact' | 'pdf' | 'book'; bookmark?: { page?: number; scrollY?: number; submode?: 'compact' | 'pdf' | 'book' } }): Promise<void> {
     try {
       const db = await this.openDB();
       const transaction = db.transaction([this.STORE_NAME], 'readwrite');
@@ -145,6 +147,7 @@ export class StorageService {
               pageNumber: patch.pageNumber ?? latest.pageNumber,
               palette: patch.palette ?? latest.palette,
               faithfulSubmode: patch.faithfulSubmode ?? latest.faithfulSubmode,
+              bookmark: patch.bookmark ?? latest.bookmark,
             };
             const putReq = store.put(updated);
             putReq.onsuccess = () => resolve();

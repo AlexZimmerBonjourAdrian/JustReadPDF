@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useViewState } from '@/features/view-state';
+import { useBookmark } from '@/features/bookmark';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StorageService } from '@/data/StorageService';
@@ -30,6 +31,8 @@ export default function HomeClient() {
   const initialScrollY = viewState.scrollY;
   const initialPage = viewState.pageNumber;
   const faithfulSubmode = viewState.faithfulSubmode;
+  const { bookmark, setBookmark: setBookmarkState, clearBookmark: clearBookmarkState, goToBookmark: goToBookmarkState } = useBookmark();
+  const [forcedPdfPage, setForcedPdfPage] = useState<number | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
@@ -43,7 +46,8 @@ export default function HomeClient() {
     setViewerFile(null);
     setViewerType(null);
     setOriginalFileName('');
-    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable', faithfulSubmode: 'compact' });
+    updateViewState({ scrollY: 0, pageNumber: 1, viewMode: 'comfortable', faithfulSubmode: 'compact', bookmark: undefined });
+    clearBookmarkState();
   };
 
 
@@ -74,7 +78,9 @@ export default function HomeClient() {
           pageNumber: stored.pageNumber ?? 1,
           palette: (stored.palette as DocPaletteName) ?? 'dark',
           faithfulSubmode: stored.faithfulSubmode === 'pdf' || stored.faithfulSubmode === 'book' ? stored.faithfulSubmode : 'compact',
+          bookmark: stored.bookmark,
         });
+        setBookmarkState(stored.bookmark ?? null);
         
         const strategy = FileProcessorFactory.getStrategy(stored.file);
         if (strategy) {
@@ -232,7 +238,7 @@ export default function HomeClient() {
                     className="flex-1 min-h-0 flex flex-col"
                   >
                     <div className="relative flex-1 min-h-0 flex flex-col">
-                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={initialPage} onPageChange={(p: number) => updateViewState({ pageNumber: p })} submode={faithfulSubmode} onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }} />
+                      <FaithfulViewer originalFile={pdfFile} plainText={extractedText} onSearchNavigate={() => {}} toolbarActions={toolbarActions} initialPage={forcedPdfPage ?? initialPage} onPageChange={(p: number) => { updateViewState({ pageNumber: p }); setForcedPdfPage(null); }} submode={faithfulSubmode} onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }} bookmarkPage={bookmark?.page} bookmarkSubmode={bookmark?.submode} onToggleBookmark={(page: number) => { setBookmarkState({ page, submode: faithfulSubmode }); updateViewState({ bookmark: { page, submode: faithfulSubmode } }); }} onGoToBookmark={() => { if (bookmark?.page) { setForcedPdfPage(bookmark.page); updateViewState({ pageNumber: bookmark.page }); } }} />
                       <HamburgerMenu
                         submode={faithfulSubmode}
                         onSubmodeChange={(m) => { updateViewState({ faithfulSubmode: m }); }}
