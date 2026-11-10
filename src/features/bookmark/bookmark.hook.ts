@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Bookmark } from './bookmark.types';
+import { BookmarkService } from './bookmark.service';
 import { StorageService } from '@/data/StorageService';
 
 export function useBookmark() {
