@@ -34,6 +34,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
   const [zoomFactor, setZoomFactor] = useState<number>(1);
   const [fileUrl, setFileUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [showPdfTools, setShowPdfTools] = useState<boolean>(false);
 
   const isBook = submode === 'book';
   const isPdfMode = submode === 'pdf';
