@@ -89,15 +89,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
             <span className="w-px h-4 bg-[#2A2E33] mx-1" />
           </>
         )}
-        {submode === 'compact' && (
-          <>
-            <span className="w-px h-4 bg-[#2A2E33] mx-1" />
-            <button onClick={() => { setUserZoom(true); setScale(s => Math.max(0.75, +(s - 0.25).toFixed(2))); }} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white">−</button>
-            <span className="text-[#9CA3AF] font-mono w-[44px] text-center">{Math.round(scale * 100)}%</span>
-            <button onClick={() => { setUserZoom(true); setScale(s => Math.min(2.5, +(s + 0.25).toFixed(2))); }} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white">+</button>
-            <button onClick={() => { setUserZoom(false); }} className="px-2 py-1 rounded-[6px] bg-[#25282B] text-[#9CA3AF] hover:text-white text-[11px]">Ajustar</button>
-          </>
-        )}
+
       </div>
       {submode === 'pdf' && (
         <PdfToolsPanel
