@@ -138,6 +138,15 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
           )}
         </>
       )}
+      <style>{`
+        .pdf-page-wrapper { overflow: hidden !important; max-width: 100%; position: relative; }
+        .pdf-page-wrapper a { word-break: break-all !important; overflow-wrap: break-word !important; color: #60a5fa !important; text-decoration: underline !important; }
+        .pdf-page-wrapper img { max-width: 100% !important; height: auto !important; display: block !important; }
+        .react-pdf__Page { overflow: hidden !important; max-width: 100% !important; }
+        .react-pdf__Page__canvas { max-width: 100% !important; height: auto !important; }
+        .react-pdf__Page__textContent { word-break: break-all !important; overflow-wrap: break-word !important; max-width: 100% !important; }
+        .react-pdf__Page__textContent a { word-break: break-all !important; overflow-wrap: break-word !important; max-width: 100% !important; }
+      `}</style>
       <div ref={containerRef} className="flex-1 min-h-0 overflow-auto py-6 px-4 flex flex-col items-center">
         {isLoading && numPages === 0 && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#0f0f0f]/90 z-40 backdrop-blur-sm">
@@ -169,7 +178,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                 {Array.from({ length: numPages }, (_, i) => i + 1).map((p) => {
                   const isMarked = isPageMarked(p);
                   return (
-                    <div key={`page-${p}`} className="relative w-full max-w-[612px] min-h-[792px] mx-auto">
+                    <div key={`page-${p}`} className="relative w-full max-w-[612px] min-h-[792px] mx-auto overflow-hidden pdf-page-wrapper">
                       <div className="relative z-0">
                         <Page
                           pageNumber={p}
@@ -203,7 +212,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
               </div>
             ) : isBook ? (
               <div className={`flex gap-6 ${isBook ? 'min-w-max mx-auto' : ''} justify-center relative`}>
-                <div className="relative min-h-[792px] mx-auto">
+                <div className="relative min-h-[792px] mx-auto overflow-hidden pdf-page-wrapper">
                   <Page
                     key={`left-${pageNumber}`}
                     pageNumber={pageNumber}
@@ -232,7 +241,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
                   )}
                 </div>
                 {secondPage > pageNumber && (
-                  <div className="relative min-h-[792px] mx-auto">
+                  <div className="relative min-h-[792px] mx-auto overflow-hidden pdf-page-wrapper">
                     <Page
                       key={`right-${secondPage}`}
                       pageNumber={secondPage}
@@ -264,7 +273,7 @@ export default function FaithfulPdfViewer({ file, initialPage = 1, onPageChange,
               </div>
             ) : (
               <div className="flex justify-center relative">
-                <div className="relative min-h-[792px] mx-auto">
+                <div className="relative min-h-[792px] mx-auto overflow-hidden pdf-page-wrapper">
                   <Page
                     pageNumber={pageNumber}
                     scale={baseScale}

@@ -117,6 +117,12 @@ export class PdfTextExtractor {
         LoggerService.warn('PDF', 'texto vacío, PDF escaneado -> OCR ...');
         return await OcrService.extractTextFromPDF(file, progressCallback);
       }
+
+      // Verificar si el texto extraído parece corrupto (URLs rotas, caracteres ilegibles, etc.)
+      if (this.isTextCorrupt(fullText)) {
+        LoggerService.warn('PDF', `texto corrupto detectado (${fullText.length} chars, ${this.countGarbledChars(fullText)} caracteres ilegibles) -> OCR ...`);
+        return await OcrService.extractTextFromPDF(file, progressCallback);
+      }
       
       LoggerService.info('PDF', `react-pdf structure-aware: ${fullText.length} caracteres`);
       // Ya viene con # ## ### por detector, no re-aplicar formatTextToMarkdown que duplicaría headings
@@ -126,6 +132,50 @@ export class PdfTextExtractor {
       LoggerService.error('PDF', 'extractWithReactPdf falló:', error);
       throw new Error(`Error al extraer texto con react-pdf: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
+  }
+
+  /**
+   * Verifica si el texto extraído parece corrupto (demasiados caracteres ilegibles,
+   * URLs rotas, o texto muy corto para el tamaño del PDF).
+   */
+  private static isTextCorrupt(text: string): boolean {
+    if (text.trim().length < 30) return true;
+
+    const garbled = this.countGarbledChars(text);
+    const total = text.length;
+    const garbledRatio = garbled / total;
+
+    // Si más del 15% de los caracteres son ilegibles, considerar corrupto
+    if (garbledRatio > 0.15) return true;
+
+    // Verificar si hay URLs rotas (demasiados caracteres especiales consecutivos)
+    const urlPattern = /[a-zA-Z0-9]{20,}/g;
+    const longRuns = text.match(urlPattern);
+    if (longRuns && longRuns.length > 5) {
+      // Muchas secuencias largas sin espacios = probablemente texto corrupto
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Cuenta caracteres ilegibles o problemáticos en el texto
+   */
+  private static countGarbledChars(text: string): number {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) {
+      const code = text.charCodeAt(i);
+      // Caracteres de control (excepto \n, \r, \t)
+      if (code < 32 && code !== 10 && code !== 13 && code !== 9) {
+        count++;
+      }
+      // Caracteres de reemplazo Unicode (U+FFFD)
+      if (code === 0xFFFD) {
+        count++;
+      }
+    }
+    return count;
   }
 
   /**
